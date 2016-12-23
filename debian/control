@@ -1,0 +1,18 @@
+Source: libopx-sai-common-utils
+Section: net
+Priority: optional
+Maintainer: Dell <support@dell.com>
+Build-Depends: debhelper (>= 9), autotools-dev, dh-autoreconf, libopx-common-dev,libopx-logging-dev,opx-sai-api-dev
+Standards-Version: 3.9.3
+
+Package: libopx-sai-common-utils1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},libopx-common1,libopx-logging1
+Description: This package contains utility functions that is used by the Dell SAI implementation.
+
+
+Package: libopx-sai-common-utils-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},libopx-common-dev,libopx-logging-dev,opx-sai-api-dev,libopx-sai-common-utils1
+Description: This package contains utility functions that is used by the Dell SAI implementation.
+
