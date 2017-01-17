@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=subdir-objects
 SUBDIRS = inc
 
-lib_LTLIBRARIES = libsai-common-utils.la
+lib_LTLIBRARIES = libsai_common_utils.la
 
 libsai_common_utils_la_SOURCES = \
 src/sai_gen_utils.c src/switchinfra/sai_switch_debug.c \
