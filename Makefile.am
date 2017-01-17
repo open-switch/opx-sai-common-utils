@@ -2,9 +2,9 @@ ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=subdir-objects
 SUBDIRS = inc
 
-lib_LTLIBRARIES = libsai_common_utils.la
+lib_LTLIBRARIES = libopx_sai_common_utils.la
 
-libsai_common_utils_la_SOURCES = \
+libopx_sai_common_utils_la_SOURCES = \
 src/sai_gen_utils.c src/switchinfra/sai_switch_debug.c \
 src/switchinfra/sai_switch_utils.c \
 src/port/sai_port_attributes.c src/port/sai_port_debug.c \
@@ -19,8 +19,8 @@ src/qos/sai_qos_util.c src/qos/sai_qos_wred_debugs.c \
 src/acl/sai_acl_utils.c src/tunnel/sai_tunnel_utils.c
 
 
-libsai_common_utils_la_CFLAGS= -I$(top_srcdir)/inc/opx -I$(includedir)/opx
-libsai_common_utils_la_LDFLAGS= -shared -version-info 1:1:0
-libsai_common_utils_la_LIBADD= -lopx_common -lopx_logging -lpthread
+libopx_sai_common_utils_la_CFLAGS= -I$(top_srcdir)/inc/opx -I$(includedir)/opx
+libopx_sai_common_utils_la_LDFLAGS= -shared -version-info 1:1:0
+libopx_sai_common_utils_la_LIBADD= -lopx_common -lopx_logging -lpthread
 
 
