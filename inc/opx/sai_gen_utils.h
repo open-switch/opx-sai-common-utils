@@ -21,6 +21,10 @@
 #include "sai.h"
 #include "std_type_defs.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 /** Maximum count of SAI API Id. To be updated when a new API is added */
 #define SAI_MAX_API_ID (SAI_API_UDF + 1)
 
@@ -100,4 +104,7 @@ sai_status_t sai_find_attr_in_attrlist(sai_attr_id_t attr_id,
  */
 bool dn_sai_check_duplicate_attr(uint_t attr_count, const sai_attribute_t *attr_list,
                                  uint_t *dup_index);
+#ifdef __cplusplus
+}
+#endif
 #endif
