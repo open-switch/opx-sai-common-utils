@@ -1,6 +1,5 @@
-libopx-sai-common-utils (1.0.1) main; urgency=medium
+opx-sai-common-utils (1.0.1) unstable; urgency=medium
 
-  * 
+  * Initial release.
 
- -- Dell Team <support@dell.com>  Thu, 15 Dec 2016 10:05:24 +0000
-
+ -- OpenSwitch Developers <ops-dev@lists.openswitch.net>  Wed, 01 Feb 2017 09:46:26 -0800

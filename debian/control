@@ -1,4 +1,4 @@
-Source: libopx-sai-common-utils
+Source: opx-sai-common-utils
 Section: net
 Priority: optional
 Maintainer: OpenSwitch Developers <ops-dev@lists.openswitch.net>
