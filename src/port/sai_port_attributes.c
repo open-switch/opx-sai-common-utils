@@ -1,21 +1,27 @@
-/************************************************************************
-* LEGALESE:   "Copyright (c) 2015, Dell Inc. All rights reserved."
-*
-* This source code is confidential, proprietary, and contains trade
-* secrets that are the sole property of Dell Inc.
-* Copy and/or distribution of this source code or disassembly or reverse
-* engineering of the resultant object code are strictly forbidden without
-* the written consent of Dell Inc.
-*
-************************************************************************/
+/*
+ * Copyright (c) 2016 Dell Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
+ * LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS
+ * FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
+ *
+ * See the Apache Version 2.0 License for specific language governing
+ * permissions and limitations under the License.
+ */
+
 /**
-* @file sai_port_attributes.c
-*
-* @brief This file contains SAI Port attributes default value initialization
-* and sai_port_attr_info_t cache set and get APIs and few port attributes
-* get implementation.
-*
-*************************************************************************/
+ * @file sai_port_attributes.c
+ *
+ * @brief This file contains SAI Port attributes default value initialization
+ * and sai_port_attr_info_t cache set and get APIs and few port attributes
+ * get implementation.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
