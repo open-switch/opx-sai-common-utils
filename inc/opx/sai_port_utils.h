@@ -1,29 +1,32 @@
-/************************************************************************
-* LEGALESE:   "Copyright (c); 2015, Dell Inc. All rights reserved."
-*
-* This source code is confidential, proprietary, and contains trade
-* secrets that are the sole property of Dell Inc.
-* Copy and/or distribution of this source code or disassembly or reverse
-* engineering of the resultant object code are strictly forbidden without
-* the written consent of Dell Inc.
-*
-************************************************************************/
-/**
-* @file sai_port_utils.h
-*
-* @brief This file contains SAI Common Port Utility API signatures.
-*  Common Port utility API's can be used by other SAI components.
-*
-*  SAI Port Id used in the below APIs refers to the actual NPU switch ports
-*  and doesn't include virtual ports like LAG and Tunnel ports and not
-*  even CPU port. CPU port info is available as part of switch information.
-*
-*  Below API's are used to get the switch port related information like
-*  port capabilities such as Breakout mode, port speed, PHY device type.
-*
-*************************************************************************/
+/*
+ * Copyright (c) 2016 Dell Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
+ * LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS
+ * FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
+ *
+ * See the Apache Version 2.0 License for specific language governing
+ * permissions and limitations under the License.
+ */
 
-/* OPENSOURCELICENSE */
+/**
+ * @file sai_port_utils.h
+ *
+ * @brief This file contains SAI Common Port Utility API signatures.
+ *  Common Port utility API's can be used by other SAI components.
+ *
+ *  SAI Port Id used in the below APIs refers to the actual NPU switch ports
+ *  and doesn't include virtual ports like LAG and Tunnel ports and not
+ *  even CPU port. CPU port info is available as part of switch information.
+ *
+ *  Below API's are used to get the switch port related information like
+ *  port capabilities such as Breakout mode, port speed, PHY device type.
+ */
 
 #ifndef __SAI_PORT_UTILS_H__
 #define __SAI_PORT_UTILS_H__
