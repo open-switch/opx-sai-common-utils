@@ -32,6 +32,7 @@
 
 #include "std_type_defs.h"
 #include "std_config_node.h"
+#include "sai_switch_common.h"
 
 /** \defgroup SAINPUSWITCHAPI SAI - NPU switch Functionality
  *   Switch functions for SAI NPU component
@@ -74,7 +75,7 @@ typedef sai_status_t (*sai_npu_switch_temp_get_fn)(sai_attribute_value_t *value)
  * @return SAI_STATUS_SUCCESS if initialization is successful otherwise a different
  *  error code is returned.
  */
-typedef sai_status_t (*sai_npu_switch_init_fn)(sai_switch_id_t switch_id);
+typedef sai_status_t (*sai_npu_switch_init_fn)(sai_switch_info_t *sai_switch_info);
 
 /**
  * @brief Initialize the NPU vendor specific init configuration
@@ -84,7 +85,7 @@ typedef sai_status_t (*sai_npu_switch_init_fn)(sai_switch_id_t switch_id);
  * @return SAI_STATUS_SUCCESS if initialization is successful otherwise a different
  *  error code is returned.
  */
-typedef sai_status_t (*sai_npu_switch_init_config_fn)(sai_switch_id_t switch_id,
+typedef sai_status_t (*sai_npu_switch_init_config_fn)(sai_switch_info_t *sai_switch_info,
                                                       std_config_node_t vendor_node);
 
 /**

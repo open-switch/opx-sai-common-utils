@@ -35,7 +35,7 @@
 
 static inline void print_fdb_header(void)
 {
-    SAI_DEBUG("%-20s %-5s %-20s %-5s %-5s","MAC","VLAN","Port","Type","Action");
+    SAI_DEBUG("%-20s %-5s %-20s %-5s %-5s %-5s","MAC","VLAN","Port","Type","Action","Pending");
     SAI_DEBUG("------------------------------------------------------------");
 }
 
@@ -44,12 +44,11 @@ static inline void print_fdb_notification_header(void)
     SAI_DEBUG("%-20s %-5s %-20s %-5s %-5s","MAC","VLAN","Port","InCL","Event");
     SAI_DEBUG("------------------------------------------------------------");
 }
-void sai_dump_all_fdb_entry_nodes (bool print_all_entry_types,
-                                   sai_fdb_flush_entry_type_t flush_entry_type)
+
+void sai_dump_all_fdb_entry_nodes (void)
 {
     sai_fdb_entry_node_t *fdb_entry_node = NULL;
     sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
     char mac_str[SAI_MAC_STR_LEN] = {0};
     std_rt_table *sai_global_fdb_tree = sai_fdb_cache_get();
 
@@ -64,13 +63,11 @@ void sai_dump_all_fdb_entry_nodes (bool print_all_entry_types,
     while(fdb_entry_node != NULL) {
         memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
                sizeof(sai_fdb_entry_key_t));
-        if(print_all_entry_types == true || entry_type == fdb_entry_node->entry_type) {
-            SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d",
+        SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d %-5d",
                    std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
                                      mac_str, sizeof(mac_str)),
                    fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
-                   fdb_entry_node->entry_type, fdb_entry_node->action);
-        }
+                   fdb_entry_node->entry_type, fdb_entry_node->action,fdb_entry_node->is_pending_entry);
         fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
                                                         sai_global_fdb_tree,
                                                         (u_char *)&fdb_key,
@@ -78,6 +75,31 @@ void sai_dump_all_fdb_entry_nodes (bool print_all_entry_types,
     }
 }
 
+void sai_dump_all_fdb_entry_count (void)
+{
+    sai_fdb_entry_node_t *fdb_entry_node = NULL;
+    sai_fdb_entry_key_t fdb_key;
+    std_rt_table *sai_global_fdb_tree = sai_fdb_cache_get();
+    uint_t count = 0;
+
+    memset(&fdb_key, 0, sizeof(fdb_key));
+
+    fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
+                                                        sai_global_fdb_tree,
+                                                        (u_char *)&fdb_key,
+                                                        SAI_FDB_ENTRY_KEY_SIZE);
+
+    while(fdb_entry_node != NULL) {
+        memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
+               sizeof(sai_fdb_entry_key_t));
+        fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
+                                                        sai_global_fdb_tree,
+                                                        (u_char *)&fdb_key,
+                                                        SAI_FDB_ENTRY_KEY_SIZE);
+        count++;
+    }
+    SAI_DEBUG("Number of MAC entries: %d", count);
+}
 void sai_dump_all_fdb_registered_nodes (void)
 {
     sai_fdb_registered_node_t *fdb_registered_node = NULL;
@@ -108,12 +130,42 @@ void sai_dump_all_fdb_registered_nodes (void)
     }
 }
 
-void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id, bool print_all_entry_types,
-                                        sai_fdb_flush_entry_type_t flush_entry_type)
+void sai_dump_pending_fdb_to_l3_notifs (void)
+{
+    sai_fdb_registered_node_t *fdb_registered_node = NULL;
+    sai_fdb_entry_key_t fdb_key;
+    char mac_str[SAI_MAC_STR_LEN] = {0};
+    std_rt_table *sai_global_fdb_tree = sai_fdb_registered_entry_cache_get();
+
+    memset(&fdb_key, 0, sizeof(fdb_key));
+
+    fdb_registered_node = (sai_fdb_registered_node_t *)std_radix_getnext(
+                                                        sai_global_fdb_tree,
+                                                        (u_char *)&fdb_key,
+                                                        SAI_FDB_ENTRY_KEY_SIZE);
+
+    print_fdb_notification_header();
+    while(fdb_registered_node != NULL) {
+        memcpy(&fdb_key,&(fdb_registered_node->fdb_key),
+               sizeof(sai_fdb_entry_key_t));
+        if(fdb_registered_node->node_in_cl) {
+            SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d",
+                    std_mac_to_string((const sai_mac_t*)&(fdb_registered_node->fdb_key.mac_address),
+                        mac_str, sizeof(mac_str)),
+                    fdb_registered_node->fdb_key.vlan_id,fdb_registered_node->port_id,
+                    fdb_registered_node->node_in_cl, fdb_registered_node->fdb_event);
+        }
+        fdb_registered_node = (sai_fdb_registered_node_t *)std_radix_getnext(
+                                                        sai_global_fdb_tree,
+                                                        (u_char *)&fdb_key,
+                                                        SAI_FDB_ENTRY_KEY_SIZE);
+    }
+}
+
+void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id)
 {
     sai_fdb_entry_node_t *fdb_entry_node = NULL;
     sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
     char mac_str[SAI_MAC_STR_LEN] = {0};
     std_rt_table *sai_global_fdb_tree = sai_fdb_cache_get();
 
@@ -127,13 +179,11 @@ void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id, bool print_all_
         memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
                sizeof(sai_fdb_entry_key_t));
         if(fdb_entry_node->port_id == port_id){
-            if(print_all_entry_types == true || entry_type == fdb_entry_node->entry_type) {
-                SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d",
-                    std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
-                                      mac_str, sizeof(mac_str)),
-                    fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
-                    fdb_entry_node->entry_type, fdb_entry_node->action);
-            }
+            SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d %-5d",
+                      std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
+                                        mac_str, sizeof(mac_str)),
+                      fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
+                      fdb_entry_node->entry_type, fdb_entry_node->action,fdb_entry_node->is_pending_entry);
         }
         fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
                                                         sai_global_fdb_tree,
@@ -142,12 +192,10 @@ void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id, bool print_all_
     }
 }
 
-void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id,bool print_all_entry_types,
-                                        sai_fdb_flush_entry_type_t flush_entry_type)
+void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id)
 {
     sai_fdb_entry_node_t *fdb_entry_node = NULL;
     sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
     char mac_str[SAI_MAC_STR_LEN] = {0};
     std_rt_table *sai_global_fdb_tree = sai_fdb_cache_get();
 
@@ -166,13 +214,11 @@ void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id,bool print_all_ent
         if(fdb_key.vlan_id != vlan_id){
             break;
         }
-        if(print_all_entry_types == true || entry_type == fdb_entry_node->entry_type) {
-            SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d",
-                   std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
-                                     mac_str, sizeof(mac_str)),
-                   fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
-                   fdb_entry_node->entry_type, fdb_entry_node->action);
-        }
+        SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d %-5d",
+                  std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
+                                    mac_str, sizeof(mac_str)),
+                  fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
+                  fdb_entry_node->entry_type, fdb_entry_node->action,fdb_entry_node->is_pending_entry);
         fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
                                                         sai_global_fdb_tree,
                                                         (u_char *)&fdb_key,
@@ -181,13 +227,10 @@ void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id,bool print_all_ent
 }
 
 void sai_dump_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
-                                             sai_vlan_id_t vlan_id,
-                                             bool print_all_entry_types,
-                                             sai_fdb_flush_entry_type_t flush_entry_type)
+                                             sai_vlan_id_t vlan_id)
 {
     sai_fdb_entry_node_t *fdb_entry_node = NULL;
     sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
     char mac_str[SAI_MAC_STR_LEN] = {0};
     std_rt_table *sai_global_fdb_tree = sai_fdb_cache_get();
 
@@ -206,13 +249,11 @@ void sai_dump_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
             break;
         }
         if((fdb_entry_node->port_id == port_id)){
-            if(print_all_entry_types == true || entry_type == fdb_entry_node->entry_type) {
-                SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d",
-                       std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
-                                         mac_str, sizeof(mac_str)),
-                       fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
-                       fdb_entry_node->entry_type, fdb_entry_node->action);
-            }
+            SAI_DEBUG("%-20s %-5d 0x%-20"PRIx64" %-5d %-5d %-5d",
+                      std_mac_to_string((const sai_mac_t*)&(fdb_entry_node->fdb_key.mac_address),
+                                        mac_str, sizeof(mac_str)),
+                      fdb_entry_node->fdb_key.vlan_id,fdb_entry_node->port_id,
+                      fdb_entry_node->entry_type, fdb_entry_node->action,fdb_entry_node->is_pending_entry);
         }
         fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
                                                         sai_global_fdb_tree,

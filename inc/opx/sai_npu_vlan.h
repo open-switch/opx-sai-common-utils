@@ -26,6 +26,7 @@
 #include "saivlan.h"
 #include "saitypes.h"
 #include "saistatus.h"
+#include "sai_vlan_common.h"
 
 /** SAI NPU VLAN - -Perform VLAN NPU related initialization
   \return Success: SAI_STATUS_SUCCESS
@@ -47,29 +48,22 @@ Failure: SAI_STATUS_FAILURE
  */
 typedef sai_status_t (*sai_npu_vlan_delete_fn)(sai_vlan_id_t vlan_id);
 
-/** SAI NPU VLAN - Add Ports to a VLAN
-  \param[in] vlan_id VLAN Identifier
-  \param[in] port count The number of ports to be added
-  \param[in] port_list Array containing the port list
-  containing port number and tagging mode
+/** SAI NPU VLAN - Add port to VLAN
+  \param[in]  vlan_member_node VLAN member info
+  \param[out] vlan_member_node SAI VLAN member uoid
   \return Success: SAI_STATUS_SUCCESS
 Failure: SAI_STATUS_FAILURE,SAI_STATUS_NOT_SUPPORTED
  */
-typedef sai_status_t (*sai_npu_add_ports_to_vlan_fn)(sai_vlan_id_t vlan_id,
-                                                     unsigned int port_count,
-                                                     const sai_vlan_port_t *port_list);
+typedef sai_status_t (*sai_npu_vlan_member_create_fn)(
+        sai_vlan_member_node_t *vlan_member_node);
 
-/** SAI NPU VLAN - Remove Ports from a VLAN
-  \param[in] vlan_id VLAN Identifier
-  \param[in] port count The number of ports to be added
-  \param[in] port_list Array containing the port list
-  containing port number and tagging mode
+/** SAI NPU VLAN - Remove port from VLAN
+  \param[in]  vlan_member_node VLAN member info
   \return Success: SAI_STATUS_SUCCESS
 Failure: SAI_STATUS_FAILURE, SAI_STATUS_NOT_SUPPORTED
  */
-typedef sai_status_t (*sai_npu_remove_ports_from_vlan_fn)(sai_vlan_id_t vlan_id,
-                                                          unsigned int port_count,
-                                                          const sai_vlan_port_t *port_list);
+typedef sai_status_t (*sai_npu_vlan_member_remove_fn)(
+        sai_vlan_member_node_t vlan_member_node);
 
 /** SAI NPU VLAN - Set VLAN Mac learning limit
   \param[in] vlan_id VLAN Identifier
@@ -147,6 +141,14 @@ typedef sai_status_t (*sai_npu_set_vlan_meta_data)(sai_vlan_id_t vlan_id,
 typedef sai_status_t (*sai_npu_get_vlan_meta_data)(sai_vlan_id_t vlan_id,
                                                    uint_t *value);
 
+/** SAI NPU VLAN - Set VLAN member tagging mode
+  \param[in] vlan_member_node VLAN member info
+  \return Success: SAI_STATUS_SUCCESS
+Failure: Appropriate failure error code
+ */
+typedef sai_status_t (*sai_npu_set_vlan_tagging_mode)(
+        sai_vlan_member_node_t vlan_member_node);
+
 /**
  * @brief VLAN NPU API table.
  */
@@ -154,8 +156,8 @@ typedef struct _sai_npu_vlan_api_t {
     sai_npu_vlan_init_fn                      vlan_init;
     sai_npu_vlan_create_fn                    vlan_create;
     sai_npu_vlan_delete_fn                    vlan_delete;
-    sai_npu_add_ports_to_vlan_fn              add_ports_to_vlan;
-    sai_npu_remove_ports_from_vlan_fn         remove_ports_from_vlan;
+    sai_npu_vlan_member_create_fn             vlan_member_create;
+    sai_npu_vlan_member_remove_fn             vlan_member_remove;
     sai_npu_set_vlan_max_learned_address_fn   set_vlan_max_learned_address;
     sai_npu_get_vlan_max_learned_address_fn   get_vlan_max_learned_address;
     sai_npu_get_vlan_stats_fn                 get_vlan_stats;
@@ -164,6 +166,7 @@ typedef struct _sai_npu_vlan_api_t {
     sai_npu_disable_vlan_learn_get_fn         disable_vlan_learn_get;
     sai_npu_set_vlan_meta_data                set_vlan_meta_data;
     sai_npu_get_vlan_meta_data                get_vlan_meta_data;
+    sai_npu_set_vlan_tagging_mode             set_vlan_member_tagging_mode;
 } sai_npu_vlan_api_t;
 
 #endif

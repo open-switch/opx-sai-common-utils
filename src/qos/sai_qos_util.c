@@ -402,7 +402,7 @@ static sai_status_t sai_qos_sched_group_child_index_bitmap_get (sai_object_id_t 
         return SAI_STATUS_ITEM_NOT_FOUND;
     }
 
-    *max_childs = p_sg_node->hqos_info.max_childs;
+    *max_childs = p_sg_node->max_childs;
     *p_bitmap = p_sg_node->hqos_info.child_index_bitmap;
 
     return SAI_STATUS_SUCCESS;
@@ -454,6 +454,9 @@ sai_status_t sai_qos_sched_group_child_index_free (sai_object_id_t sg_id,
         return SAI_STATUS_ITEM_NOT_FOUND;
     }
 
+    SAI_SCHED_GRP_LOG_TRACE ("child_index is %d and max_childs is %d",
+                           child_index, max_childs);
+
     STD_ASSERT (p_bitmap != NULL);
 
     STD_ASSERT (child_index < max_childs);
@@ -502,7 +505,7 @@ sai_status_t sai_qos_child_parent_id_get (sai_object_id_t child_id,
                 return SAI_STATUS_ITEM_NOT_FOUND;
             }
 
-            *child_parent_id = p_child_sg_node->hqos_info.parent_sched_group_id;
+            *child_parent_id = p_child_sg_node->parent_id;
 
             break;
 
@@ -850,8 +853,8 @@ sai_status_t sai_qos_port_sched_group_id_list_get (sai_object_id_t port_id,
 {
     dn_sai_qos_port_t         *p_qos_port_node = NULL;
     dn_sai_qos_sched_group_t  *p_sg_node = NULL;
-    size_t                     max_sg_count = 0;
-    size_t                     sg_count = 0;
+    int                        max_sg_count = 0;
+    int                        sg_count = 0;
     uint_t                     level = 0;
 
     STD_ASSERT (p_sg_objlist != NULL);
@@ -1026,7 +1029,6 @@ dn_sai_qos_queue_t *sai_qos_port_get_indexed_uc_queue_object(dn_sai_qos_port_t *
                                                           uint_t queue_index)
 {
     dn_sai_qos_queue_t *p_queue_node = NULL;
-    uint_t count = 0;
     STD_ASSERT(p_qos_port_node != NULL);
 
     if(queue_index >= sai_switch_max_queues_per_port_get(p_qos_port_node->port_id)){
@@ -1036,10 +1038,15 @@ dn_sai_qos_queue_t *sai_qos_port_get_indexed_uc_queue_object(dn_sai_qos_port_t *
 
     while(p_queue_node != NULL)
     {
-        if(count == queue_index){
+        SAI_QUEUE_LOG_TRACE("UC Queue Index to search %u and current queue index %u,"
+                            " queue_type is %s",
+                            queue_index, p_queue_node->queue_index,
+                            sai_qos_queue_type_to_str(p_queue_node->queue_type));
+
+        if ((p_queue_node->queue_index == queue_index)
+               && (p_queue_node->queue_type == SAI_QUEUE_TYPE_UNICAST)) {
             return p_queue_node;
         }
-        count ++;
         p_queue_node = sai_qos_port_get_next_queue(p_qos_port_node,
                                                    p_queue_node);
     }
@@ -1050,21 +1057,25 @@ dn_sai_qos_queue_t *sai_qos_port_get_indexed_mc_queue_object(dn_sai_qos_port_t *
                                                           uint_t queue_index)
 {
     dn_sai_qos_queue_t *p_queue_node = NULL;
-    uint_t count = 0;
     STD_ASSERT(p_qos_port_node != NULL);
 
     if(queue_index >= sai_switch_max_queues_per_port_get(p_qos_port_node->port_id)){
         return NULL;
     }
 
-    p_queue_node = sai_qos_port_get_first_mcast_queue(p_qos_port_node);
+    p_queue_node = sai_qos_port_get_first_queue(p_qos_port_node);
 
     while(p_queue_node != NULL)
     {
-        if(count == queue_index){
+        SAI_QUEUE_LOG_TRACE("MC Queue Index to search %u and current queue index %u, "
+                            "queue_type is %s",
+                            queue_index, p_queue_node->queue_index,
+                            sai_qos_queue_type_to_str(p_queue_node->queue_type));
+
+        if ((p_queue_node->queue_index == queue_index)
+                && (p_queue_node->queue_type == SAI_QUEUE_TYPE_MULTICAST)) {
             return p_queue_node;
         }
-        count ++;
         p_queue_node = sai_qos_port_get_next_queue(p_qos_port_node,
                                                    p_queue_node);
     }
@@ -1255,31 +1266,27 @@ dn_sai_qos_queue_t *sai_qos_next_queue_node_from_wred_get(dn_sai_qos_wred_t *p_w
 sai_qos_map_type_t sai_get_map_type_from_port_attr(sai_attr_id_t port_attr)
 {
     if(port_attr == SAI_PORT_ATTR_QOS_DOT1P_TO_TC_MAP){
-        return SAI_QOS_MAP_DOT1P_TO_TC;
+        return SAI_QOS_MAP_TYPE_DOT1P_TO_TC;
     }else if(port_attr == SAI_PORT_ATTR_QOS_DOT1P_TO_COLOR_MAP){
-        return SAI_QOS_MAP_DOT1P_TO_COLOR;
+        return SAI_QOS_MAP_TYPE_DOT1P_TO_COLOR;
     }else if(port_attr == SAI_PORT_ATTR_QOS_DOT1P_TO_TC_AND_COLOR_MAP){
-        return SAI_QOS_MAP_DOT1P_TO_TC_AND_COLOR;
+        return SAI_QOS_MAP_TYPE_DOT1P_TO_TC_AND_COLOR;
     }else if(port_attr == SAI_PORT_ATTR_QOS_DSCP_TO_TC_MAP){
-        return SAI_QOS_MAP_DSCP_TO_TC;
+        return SAI_QOS_MAP_TYPE_DSCP_TO_TC;
     }else if(port_attr == SAI_PORT_ATTR_QOS_DSCP_TO_COLOR_MAP){
-        return SAI_QOS_MAP_DSCP_TO_COLOR;
+        return SAI_QOS_MAP_TYPE_DSCP_TO_COLOR;
     }else if(port_attr == SAI_PORT_ATTR_QOS_DSCP_TO_TC_AND_COLOR_MAP){
-        return SAI_QOS_MAP_DSCP_TO_TC_AND_COLOR;
+        return SAI_QOS_MAP_TYPE_DSCP_TO_TC_AND_COLOR;
     }else if(port_attr == SAI_PORT_ATTR_QOS_TC_TO_QUEUE_MAP){
-        return SAI_QOS_MAP_TC_TO_QUEUE;
+        return SAI_QOS_MAP_TYPE_TC_TO_QUEUE;
     }else if(port_attr == SAI_PORT_ATTR_QOS_TC_AND_COLOR_TO_DOT1P_MAP){
-        return SAI_QOS_MAP_TC_AND_COLOR_TO_DOT1P;
+        return SAI_QOS_MAP_TYPE_TC_AND_COLOR_TO_DOT1P;
     }else if(port_attr == SAI_PORT_ATTR_QOS_TC_AND_COLOR_TO_DSCP_MAP){
-        return SAI_QOS_MAP_TC_AND_COLOR_TO_DSCP;
-    }else if(port_attr == SAI_PORT_ATTR_QOS_TC_TO_DSCP_MAP){
-        return SAI_QOS_MAP_TC_TO_DSCP;
-    }else if(port_attr == SAI_PORT_ATTR_QOS_TC_TO_DOT1P_MAP){
-        return SAI_QOS_MAP_TC_TO_DOT1P;
+        return SAI_QOS_MAP_TYPE_TC_AND_COLOR_TO_DSCP;
     }else if(port_attr == SAI_PORT_ATTR_QOS_TC_TO_PRIORITY_GROUP_MAP){
-        return SAI_QOS_MAP_TC_TO_PRIORITY_GROUP;
+        return SAI_QOS_MAP_TYPE_TC_TO_PRIORITY_GROUP;
     }else if(port_attr == SAI_PORT_ATTR_QOS_PFC_PRIORITY_TO_QUEUE_MAP){
-        return SAI_QOS_MAP_PFC_PRIORITY_TO_QUEUE;
+        return SAI_QOS_MAP_TYPE_PFC_PRIORITY_TO_QUEUE;
     }
 
     return SAI_QOS_MAP_INVALID_TYPE;
@@ -1288,7 +1295,6 @@ dn_sai_qos_queue_t *sai_qos_port_get_indexed_queue_object(dn_sai_qos_port_t *p_q
                                                           uint_t queue_index)
 {
     dn_sai_qos_queue_t *p_queue_node = NULL;
-    uint_t count = 0;
     STD_ASSERT(p_qos_port_node != NULL);
 
     if(queue_index >= sai_switch_max_queues_per_port_get(p_qos_port_node->port_id)){
@@ -1298,10 +1304,9 @@ dn_sai_qos_queue_t *sai_qos_port_get_indexed_queue_object(dn_sai_qos_port_t *p_q
 
     while(p_queue_node != NULL)
     {
-        if(count == queue_index){
+        if(p_queue_node->queue_index == queue_index){
             return p_queue_node;
         }
-        count ++;
         p_queue_node = sai_qos_port_get_next_queue(p_qos_port_node,
                                                    p_queue_node);
     }
@@ -1320,12 +1325,12 @@ sai_status_t sai_qos_get_tc_from_pg (sai_object_id_t port_id, uint_t pg_id, uint
         return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    if(port_node->maps_id[SAI_QOS_MAP_TC_TO_PRIORITY_GROUP] == SAI_NULL_OBJECT_ID) {
+    if(port_node->maps_id[SAI_QOS_MAP_TYPE_TC_TO_PRIORITY_GROUP] == SAI_NULL_OBJECT_ID) {
         *tc = SAI_QOS_DEFAULT_TC;
          return SAI_STATUS_SUCCESS;
     }
 
-    map_node = sai_qos_map_node_get(port_node->maps_id[SAI_QOS_MAP_TC_TO_PRIORITY_GROUP]);
+    map_node = sai_qos_map_node_get(port_node->maps_id[SAI_QOS_MAP_TYPE_TC_TO_PRIORITY_GROUP]);
 
     if(map_node == NULL) {
         return SAI_STATUS_INVALID_PARAMETER;
@@ -1338,5 +1343,134 @@ sai_status_t sai_qos_get_tc_from_pg (sai_object_id_t port_id, uint_t pg_id, uint
         }
     }
     return SAI_STATUS_FAILURE;
+}
+
+sai_status_t sai_qos_sched_group_validate_child_parent(
+                                     dn_sai_qos_sched_group_t *p_child_node,
+                                     dn_sai_qos_sched_group_t *p_parent_node)
+{
+    if (p_child_node->port_id != p_parent_node->port_id) {
+        SAI_SCHED_GRP_LOG_ERR ("Child port id 0x%"PRIx64" does not match with"
+                               " parent port id 0x%"PRIx64"",
+                               p_child_node->port_id, p_parent_node->port_id);
+
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    if (p_parent_node->hqos_info.child_count == p_parent_node->max_childs){
+        SAI_SCHED_GRP_LOG_ERR ("Child count %d is equal to max_child_count %d"
+                               "of parent sgid 0x%"PRIx64"",
+                               p_parent_node->hqos_info.child_count,
+                               p_parent_node->max_childs,
+                               p_parent_node->key.sched_group_id);
+
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_qos_queue_validate_child_parent(
+                                     dn_sai_qos_queue_t *p_queue_node,
+                                     dn_sai_qos_sched_group_t *p_parent_node)
+{
+    if (p_queue_node->port_id != p_parent_node->port_id) {
+        SAI_SCHED_GRP_LOG_ERR ("Child port id 0x%"PRIx64" does not match with"
+                               " parent port id 0x%"PRIx64"",
+                               p_queue_node->port_id, p_parent_node->port_id);
+
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    if(p_parent_node->hqos_info.child_count == p_parent_node->max_childs){
+        SAI_SCHED_GRP_LOG_ERR ("Child count %d is equal to max_child_count %d"
+                               "of parent sgid 0x%"PRIx64"",
+                               p_parent_node->hqos_info.child_count,
+                               p_parent_node->max_childs,
+                               p_parent_node->key.sched_group_id);
+
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_qos_sched_group_and_child_nodes_update (
+                                          sai_object_id_t sg_id,
+                                          sai_object_id_t child_id,
+                                          bool is_add)
+{
+    dn_sai_qos_sched_group_t    *p_child_sg_node = NULL;
+    dn_sai_qos_sched_group_t    *p_parent_sg_node = NULL;
+    dn_sai_qos_queue_t          *p_child_queue_node = NULL;
+    std_dll_head                *p_child_dll_head;
+    std_dll                     *p_child_dll_glue;
+    sai_object_type_t            child_obj_type = 0;
+    dn_sai_qos_hierarchy_info_t *p_parent_hqos_info = NULL;
+
+    p_parent_sg_node =
+        sai_qos_sched_group_node_get (sg_id);
+
+    if (p_parent_sg_node == NULL) {
+        SAI_SCHED_GRP_LOG_ERR ("Parent SG 0x%"PRIx64" does not "
+                               "exist in tree.", sg_id);
+
+        return SAI_STATUS_FAILURE;
+    }
+
+    p_parent_hqos_info = &p_parent_sg_node->hqos_info;
+
+    child_obj_type = sai_uoid_obj_type_get (child_id);
+
+    switch (child_obj_type)
+    {
+        case SAI_OBJECT_TYPE_QUEUE:
+            p_child_queue_node = sai_qos_queue_node_get (child_id);
+
+            if (NULL == p_child_queue_node) {
+                SAI_SCHED_GRP_LOG_ERR ("Child Queue 0x%"PRIx64" does not "
+                                       "exist in tree.", child_id);
+
+                return SAI_STATUS_INVALID_OBJECT_ID;
+            }
+
+            p_child_dll_glue = &p_child_queue_node->child_queue_dll_glue;
+            p_child_dll_head = &p_parent_hqos_info->child_queue_dll_head;
+            p_child_queue_node->parent_sched_group_id =
+                    (is_add ? sg_id : SAI_NULL_OBJECT_ID);
+
+            break;
+
+        case SAI_OBJECT_TYPE_SCHEDULER_GROUP:
+            p_child_sg_node = sai_qos_sched_group_node_get (child_id);
+
+            if (NULL == p_child_sg_node) {
+                SAI_SCHED_GRP_LOG_ERR ("Child Scheduler group 0x%"PRIx64" does not "
+                                       "exist in tree.", child_id);
+
+                return SAI_STATUS_INVALID_OBJECT_ID;
+            }
+
+            p_child_dll_glue = &p_child_sg_node->child_sched_group_dll_glue;
+            p_child_dll_head = &p_parent_hqos_info->child_sched_group_dll_head;
+
+            p_child_sg_node->parent_id =
+                    (is_add ? sg_id : SAI_NULL_OBJECT_ID);
+
+            break;
+
+        default:
+            return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    if (is_add) {
+        std_dll_insertatback (p_child_dll_head, p_child_dll_glue);
+        p_parent_hqos_info->child_count++;
+    } else {
+        std_dll_remove (p_child_dll_head, p_child_dll_glue);
+        p_parent_hqos_info->child_count--;
+    }
+
+    return SAI_STATUS_SUCCESS;
 }
 

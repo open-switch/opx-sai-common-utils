@@ -209,16 +209,12 @@ typedef sai_status_t (*sai_npu_next_hop_attribute_get_fn) (
  * @brief Create a next hop group in NPU.
  *
  * @param[in] p_group    Pointer to the next hop group node
- * @param[in] next_hop_count  Number of next hops added to group at creation
- * @param[in] ap_next_hop  Array of pointer to the next hop node(s)
  * @param[out] p_group_id   Next Hop Group index
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 typedef sai_status_t (*sai_npu_next_hop_group_create_fn) (
                                                 sai_fib_nh_group_t *p_group,
-                                                uint_t next_hop_count,
-                                                sai_fib_nh_t *ap_next_hop [],
                                                 sai_npu_object_id_t *p_group_id);
 /**
  * @brief Remove a next hop group in NPU.
@@ -257,20 +253,6 @@ typedef sai_status_t (*sai_npu_next_hop_remove_from_group_fn) (
                                                   sai_fib_nh_group_t *p_group,
                                                   uint_t next_hop_count,
                                                   sai_fib_nh_t *ap_next_hop []);
-
-/**
- * @brief Get attributes for a Next Hop Group object.
- *
- * @param[in] p_nh_group   Pointer to NH Group node
- * @param[in] attr_count Number of attributes
- * @param[inout] attr_list Attribute Id, Value pairs
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-typedef sai_status_t (*sai_npu_next_hop_group_attribute_get_fn) (
-                                                sai_fib_nh_group_t *p_nh_group,
-                                                uint_t attr_count,
-                                                sai_attribute_t *p_attr_list);
 
 /**
  * @brief Create a route entry in NPU.
@@ -478,7 +460,6 @@ typedef struct _sai_npu_nh_group_api_t {
     sai_npu_next_hop_group_remove_fn           nh_group_remove;
     sai_npu_next_hop_add_to_group_fn           add_nh_to_group;
     sai_npu_next_hop_remove_from_group_fn      remove_nh_from_group;
-    sai_npu_next_hop_group_attribute_get_fn    nh_group_attr_get;
 } sai_npu_nh_group_api_t;
 
 /**
@@ -494,4 +475,60 @@ typedef struct _sai_npu_route_api_t {
 /**
  * \}
  */
+
+/** SAI FIB API - Dump the Virtual router
+    \param[in] vr_id Virtual router object ID
+  */
+void sai_fib_dump_vr (sai_object_id_t vr_id);
+
+/** SAI FIB API - Dump all Virtual routers */
+void sai_fib_dump_all_vr (void);
+
+/** SAI FIB API - Dump the router interface
+    \param[in] rif_id Router interface object ID
+  */
+void sai_fib_dump_rif (sai_object_id_t rif_id);
+
+/** SAI FIB API - Dump all the router interfaces in the Virtual router
+    \param[in] vr_id Virtual router ID
+  */
+void sai_fib_dump_all_rif_in_vr (sai_object_id_t vr_id);
+
+/** SAI FIB API - Dump all router interfaces create */
+void sai_fib_dump_all_rif (void);
+
+/** SAI FIB API - Dump all the routes  in the Virtual router
+    \param[in] vr_id Virtual router ID
+  */
+void sai_fib_dump_all_route_in_vr (sai_object_id_t vrf);
+
+/** SAI FIB API - Dump the next hop information
+    \param[in] nh_id Next hop ID
+  */
+void sai_fib_dump_nh (sai_object_id_t nh_id);
+
+/** SAI FIB API - Dump all the next hop information */
+void sai_fib_dump_all_nh (void);
+
+/** SAI FIB API - Dump all neighbor inforation in the Virtual router
+    \param[in] vr_id Virtual router ID
+  */
+void sai_fib_dump_all_neighbor_in_vr (sai_object_id_t vrf);
+
+/** SAI FIB API - Dump the next hop group information
+    \param[in] group_id Next hop group ID
+  */
+void sai_fib_dump_nh_group (sai_object_id_t group_id);
+
+/** SAI FIB API - Dump all the next hop group information */
+void sai_fib_dump_all_nh_group (void);
+
+/** SAI FIB API - Dump the next hop list from the Next hop group
+    \param[in] group_id Next hop group ID
+  */
+void sai_fib_dump_nh_list_from_nh_group (sai_object_id_t group_id);
+
+/** SAI FIB API - Dump all the neighbor mac tree */
+void sai_fib_dump_neighbor_mac_entry_tree (void);
+
 #endif /* __SAI_L3_API_H__ */

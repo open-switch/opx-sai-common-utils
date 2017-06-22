@@ -59,6 +59,8 @@ typedef struct _sai_fdb_entry_node_t {
     sai_packet_action_t action;
     /* metadata: FDB Meta Data */
     uint_t metadata;
+    /* is_pending_entry: True if the entry is pending*/
+    bool is_pending_entry;
 }sai_fdb_entry_node_t;
 
 /** FDB Registered Node: The full FDB registered node structure*/
@@ -85,6 +87,10 @@ typedef struct _sai_fdb_notification_data_t {
 
 } sai_fdb_notification_data_t;
 
+typedef struct _sai_fdb_even_additional_data_t {
+    /* is_pending_entry: True if the entry is pending*/
+    bool is_pending_entry;
+} sai_fdb_even_additional_data_t;
 
 typedef struct _sai_fdb_global_data_t {
     /*sai_global_fdb_tree: FDB entry global tree*/
@@ -106,6 +112,7 @@ typedef struct _sai_fdb_global_data_t {
 #define SAI_MAC_STR_LEN (SAI_MAC_NUM_CHAR_PER_BYTE*SAI_MAC_NUM_BYTES)
 #define SAI_FDB_LEARN_LIMIT_DISABLE 0
 #define SAI_FDB_MAX_NOTIFICATION_NODES 50
+#define SAI_FDB_MAX_MACS_PER_CALLBACK 1000
 
 /** Logging utility for SAI FDB API */
 #define SAI_FDB_LOG(level, msg, ...) \

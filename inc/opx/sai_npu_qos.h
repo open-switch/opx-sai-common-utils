@@ -72,6 +72,40 @@ typedef sai_status_t (*sai_npu_queue_create_fn) (dn_sai_qos_queue_t *p_queue_nod
 typedef sai_status_t (*sai_npu_queue_remove_fn) (dn_sai_qos_queue_t *p_queue_node);
 
 /**
+ * @brief Attach queue to a parent scheduler group in NPU
+ *
+ * @param[in] queue_id      Object Identifier of the child queue
+ * @param[in] parent_id     Object Identifier of the parent scheduler group
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_queue_attach_to_parent_fn) (
+                                             sai_object_id_t queue_id,
+                                             sai_object_id_t parent_id);
+
+/**
+ * @brief  Detach queue from a parent scheduler group in NPU
+ *
+ * @param[in] queue_id      Object Identifier of the child queue
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_queue_detach_from_parent_fn) (
+                                             sai_object_id_t queue_id);
+
+/**
+ * @brief  Modify parent scheduler group of a queue in NPU
+ *
+ * @param[in] queue_id       Object Identifier of the child queue
+ * @param[in] new_parent_id  Object Identifier of the new parent scheduler group
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_queue_modify_parent_fn) (
+                                             sai_object_id_t queue_id,
+                                             sai_object_id_t new_parent_id);
+
+/**
  * @brief Set an attribute to the queue in NPU.
  *
  * @param[in] p_queue_node Pointer to the queue node
@@ -149,46 +183,38 @@ typedef sai_status_t (*sai_npu_sched_group_create_fn) (dn_sai_qos_sched_group_t 
 typedef sai_status_t (*sai_npu_sched_group_remove_fn) (dn_sai_qos_sched_group_t *p_sg_node);
 
 /**
- * @brief Initialization of NPU specific Qos root Scheduler group settings.
+ * @brief Attach to a parent scheduler group in NPU
  *
- * @param[in] port_id  SAI Port id
+ * @param[in] sg_id      Object Identifier of the child scheduler group
+ * @param[in] parent_id  Object Identifier of the parent scheduler group
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-typedef sai_status_t (*sai_npu_root_sched_group_init_fn) (sai_object_id_t port_id);
+typedef sai_status_t (*sai_npu_sched_group_attach_to_parent_fn) (
+                                             sai_object_id_t sg_id,
+                                             sai_object_id_t parent_id);
 
 /**
- * @brief Add child(queues/scheduler groups) to parent in NPU.
+ * @brief  Attach to a parent scheduler group in NPU
  *
- * @param[in] scheduler_group_id    Scheduler group id.
- * @param[in] child_count  Number of childs added to parent.
- * @param[in] child_objects  Array of pointer to child object id(s).
- * @param[out] added_child_count Number of childs added successfuly in NPU.
+ * @param[in] sg_id      Object Identifier of the child scheduler group
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
+typedef sai_status_t (*sai_npu_sched_group_detach_from_parent_fn) (
+                                             sai_object_id_t sg_id);
 
-typedef sai_status_t (*sai_npu_add_child_object_to_group_fn) (
-                                           sai_object_id_t scheduler_group_id,
-                                           uint_t child_count,
-                                           const sai_object_id_t* child_objects,
-                                           uint_t* added_child_count);
 /**
- * @brief Remove child(queues/scheduler groups) from parent in NPU.
+ * @brief  Modify parent scheduler group in NPU
  *
- * @param[in] scheduler_group_id    Scheduler group id.
- * @param[in] child_count  Number of childs added to parent
- * @param[in] child_objects  Array of pointer to child object id(s)
- * @param[out] removed_child_count Number of childs removed successfuly in NPU.
+ * @param[in] sg_id          Object Identifier of the child scheduler group
+ * @param[in] new_parent_id  Object Identifier of the new parent scheduler group
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-typedef sai_status_t (*sai_npu_remove_child_object_from_group_fn)(
-                                               sai_object_id_t scheduler_group_id,
-                                               uint_t child_count,
-                                               const sai_object_id_t* child_objects,
-                                               uint_t* removed_child_count);
-
+typedef sai_status_t (*sai_npu_sched_group_modify_parent_fn) (
+                                             sai_object_id_t sg_id,
+                                             sai_object_id_t new_parent_id);
 
 /**
  * @brief Sets an attribute to the Scheduler group in NPU.
@@ -577,12 +603,10 @@ typedef void (*sai_npu_buffer_profile_attr_table_get_fn) (const dn_sai_attribute
 /**
  *  @brief Init NPU buffer parameters
  *
- * @param[in] buffer_info Structure containing information to init
- *
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-typedef sai_status_t (*sai_npu_buffer_init_fn) (const sai_qos_npu_buffer_info_t *buffer_info);
+typedef sai_status_t (*sai_npu_buffer_init_fn) (void);
 
 /**
  *  @brief Create Buffer pool
@@ -667,6 +691,7 @@ typedef sai_status_t (*sai_npu_buffer_profile_remove_fn) (dn_sai_qos_buffer_prof
  *  @brief Set buffer profile attribute
  *
  * @param[in] p_buf_profile_node Buffer profile node
+ * @param[in] old_attr attribute to be set
  * @param[in] attr attribute to be set
  *
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
@@ -675,20 +700,23 @@ typedef sai_status_t (*sai_npu_buffer_profile_remove_fn) (dn_sai_qos_buffer_prof
 typedef sai_status_t (*sai_npu_buffer_profile_attr_set_fn) (sai_object_id_t obj_id,
                                                             dn_sai_qos_buffer_profile_t
                                                             *p_buf_profile_node,
+                                                            const sai_attribute_t *old_attr,
                                                             const sai_attribute_t *attr);
 
 /**
  *  @brief Apply buffer profile on an object
  *
  * @param[in] obj_id Object ID on which buffer profile to be applied
+ * @param[in] p_old_buf_profile_node Buffer profile node
  * @param[in] p_buf_profile_node Buffer profile node
+ * @param[in] is_retry is retry
  *
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 typedef sai_status_t (*sai_npu_apply_buffer_profile_fn) (sai_object_id_t obj_id,
-                                                         dn_sai_qos_buffer_profile_t
-                                                         *p_buf_profile_node);
+                      dn_sai_qos_buffer_profile_t *p_old_buf_profile_node,
+                      dn_sai_qos_buffer_profile_t *p_buf_profile_node, bool is_retry);
 
 /**
  *  @brief Create ingress priority group
@@ -760,13 +788,13 @@ typedef struct _sai_npu_qos_api_t {
  */
 typedef struct _sai_npu_sched_group_api_t {
 
-    sai_npu_root_sched_group_init_fn           root_sched_group_init;
     sai_npu_sched_group_create_fn              sched_group_create;
     sai_npu_sched_group_remove_fn              sched_group_remove;
     sai_npu_sched_group_attribute_set_fn       sched_group_attribute_set;
     sai_npu_sched_group_attribute_get_fn       sched_group_attribute_get;
-    sai_npu_add_child_object_to_group_fn       add_child_to_group;
-    sai_npu_remove_child_object_from_group_fn  remove_child_from_group;
+    sai_npu_sched_group_attach_to_parent_fn    sched_group_attach_to_parent;
+    sai_npu_sched_group_detach_from_parent_fn  sched_group_detach_from_parent;
+    sai_npu_sched_group_modify_parent_fn       sched_group_modify_parent;
     sai_npu_attribute_table_get_fn             attribute_table_get;
 } sai_npu_sched_group_api_t;
 
@@ -775,13 +803,16 @@ typedef struct _sai_npu_sched_group_api_t {
  */
 typedef struct _sai_npu_queue_api_t {
 
-    sai_npu_queue_create_fn           queue_create;
-    sai_npu_queue_remove_fn           queue_remove;
-    sai_npu_queue_attribute_set_fn    queue_attribute_set;
-    sai_npu_queue_attribute_get_fn    queue_attribute_get;
-    sai_npu_attribute_table_get_fn    attribute_table_get;
-    sai_npu_queue_stats_get_fn        queue_stats_get;
-    sai_npu_queue_stats_clear_fn      queue_stats_clear;
+    sai_npu_queue_create_fn              queue_create;
+    sai_npu_queue_remove_fn              queue_remove;
+    sai_npu_queue_attach_to_parent_fn    queue_attach_to_parent;
+    sai_npu_queue_detach_from_parent_fn  queue_detach_from_parent;
+    sai_npu_queue_modify_parent_fn       queue_modify_parent;
+    sai_npu_queue_attribute_set_fn       queue_attribute_set;
+    sai_npu_queue_attribute_get_fn       queue_attribute_get;
+    sai_npu_attribute_table_get_fn       attribute_table_get;
+    sai_npu_queue_stats_get_fn           queue_stats_get;
+    sai_npu_queue_stats_clear_fn         queue_stats_clear;
 
 } sai_npu_queue_api_t;
 

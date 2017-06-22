@@ -187,6 +187,17 @@ static inline bool sai_is_obj_id_next_hop_group (sai_object_id_t uoid)
 }
 
 /**
+ * @brief Check if the SAI object id is Next Hop Group Member object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if next hop group member object id else false is returned.
+ */
+static inline bool sai_is_obj_id_next_hop_group_member (sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER);
+}
+
+/**
  * @brief Check if the SAI object id is acl table object id.
  *
  * @param[in] uoid SAI unified object id.
@@ -228,6 +239,17 @@ static inline bool sai_is_obj_id_acl_entry (sai_object_id_t uoid)
 static inline bool sai_is_obj_id_acl_counter (sai_object_id_t uoid)
 {
     return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_ACL_COUNTER);
+}
+
+/**
+ * @brief Check if the SAI object id is acl range object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if acl range object id else false is returned.
+ */
+static inline bool sai_is_obj_id_acl_range (sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_ACL_RANGE);
 }
 
 /**
@@ -415,6 +437,39 @@ static inline bool sai_is_obj_id_tunnel_map (sai_object_id_t uoid)
 static inline bool sai_is_obj_id_tunnel_term_entry (sai_object_id_t uoid)
 {
     return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_TUNNEL_TERM_TABLE_ENTRY);
+}
+
+/**
+ * @brief Check if the SAI object id is VLAN object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if VLAN object id else false is returned.
+ */
+static inline bool sai_is_obj_id_vlan(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_VLAN);
+}
+
+/**
+ * @brief Check if the SAI object id is VLAN Member object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if VLAN Member object id else false is returned.
+ */
+static inline bool sai_is_obj_id_vlan_member(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_VLAN_MEMBER);
+}
+
+/**
+ * @brief Check if the SAI object id is STP port object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if SAI UOID types is STP port object id else false is returned.
+ */
+static inline bool sai_is_obj_id_stp_port(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get(uoid) == SAI_OBJECT_TYPE_STP_PORT);
 }
 
 /**

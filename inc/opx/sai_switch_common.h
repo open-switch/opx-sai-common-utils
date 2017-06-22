@@ -96,8 +96,11 @@ typedef struct _sai_switch_info_t {
     /** L2 Table size */
     uint_t                   l2_table_size;
 
-    /** L3 Table size */
-    uint_t                   l3_table_size;
+    /** L3 host Table size */
+    uint_t                   l3_host_table_size;
+
+    /** L3 route Table size */
+    uint_t                   l3_route_table_size;
 
     /** Maximum number of traffic classes supported */
     uint_t                   max_supported_tc;
@@ -125,6 +128,9 @@ typedef struct _sai_switch_info_t {
 
     /** Max Hierarchy childs per scheduler group node */
     uint_t                   max_childs_per_hierarchy_node;
+
+    /** Hierarchy is fixed or flexible supported per port */
+    bool                     hierarchy_fixed;
 
     /** Maximum number of learned MAC addresses */
     uint32_t                 max_mac_learn_limit;
@@ -171,17 +177,20 @@ typedef struct _sai_switch_info_t {
     /** Size of a cell in MMU */
     uint_t                   cell_size;
 
-    /** Max service pools supported at ingress*/
+    /** Max service pools supported at ingress */
     uint_t                   ing_max_buf_pools;
 
-    /** Max service pools supported at egress*/
+    /** Max service pools supported at egress */
     uint_t                   egr_max_buf_pools;
+
+    /** Max tiles per service pools */
+    uint_t                   tiles_per_buf_pool;
+
+    /** Max tile buffer size */
+    uint_t                   max_tile_buffer_size;
 
     /** Applicaton info on the ports */
     rbtree_handle            port_applications_tree;
-
-    /* L3 neighbor table size */
-    uint_t                   neighbor_table_size;
 
     /* number of LAG members */
     uint_t                   num_lag_members;
@@ -194,6 +203,22 @@ typedef struct _sai_switch_info_t {
 
     /* software linkscan timer interval */
     uint_t                   sw_linkscan_interval;
+
+    /* switch  hardward info */
+    sai_s8_list_t             switch_hardware_info;
+
+    /*Firmware file path info*/
+    sai_s8_list_t            microcode_module_name;
+
+    /*Switch profile ID info */
+    uint32_t                 profile_id;
+
+    /*Switch init flag */
+    bool                     switch_init_flag;
+
+    /*Switch Object ID */
+    sai_object_id_t          switch_object_id;
+
 
 } sai_switch_info_t;
 
@@ -223,8 +248,11 @@ typedef struct _sai_switch_init_config_t {
     /** L2 Table size */
     uint_t                   l2_table_size;
 
-    /** L3 Table size */
-    uint_t                   l3_table_size;
+    /** L3 host Table size */
+    uint_t                   l3_host_table_size;
+
+    /** L3 route Table size */
+    uint_t                   l3_route_table_size;
 
     /** Maximum number of traffic classes supported */
     uint_t                   max_supported_tc;
@@ -253,6 +281,9 @@ typedef struct _sai_switch_init_config_t {
     /** Max Hierarchy childs per scheduler group node */
     uint_t                   max_childs_per_hierarchy_node;
 
+    /** Hierarchy is fixed or flexible supported per port */
+    bool                     hierarchy_fixed;
+
     /** Max buffer size supported */
     uint_t                   max_buffer_size;
 
@@ -267,6 +298,12 @@ typedef struct _sai_switch_init_config_t {
 
     /** Max service pools supported at egress*/
     uint_t                   egr_max_buf_pools;
+
+    /** Max tiles per service pools */
+    uint_t                   tiles_per_buf_pool;
+
+    /** Max tile buffer size */
+    uint_t                   max_tile_buffer_size;
 
 } sai_switch_init_config_t;
 

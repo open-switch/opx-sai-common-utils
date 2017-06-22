@@ -82,7 +82,9 @@ void sai_switch_info_dump(void)
 
     SAI_DEBUG("L2 table size %d", switch_info->l2_table_size);
 
-    SAI_DEBUG("L2 table size %d", switch_info->l3_table_size);
+    SAI_DEBUG("L3 host table size %d", switch_info->l3_host_table_size);
+
+    SAI_DEBUG("L3 route table size %d", switch_info->l3_route_table_size);
 
     SAI_DEBUG("Max Number of UCAST Queues per port %d\r\n", switch_info->max_uc_queues_per_port);
 
@@ -98,9 +100,21 @@ void sai_switch_info_dump(void)
 
     SAI_DEBUG("Total Number of Queues per CPU port %d\r\n", switch_info->max_queues_per_cpu_port);
 
+    SAI_DEBUG("Switch Hierarchy Fixed per port %d\r\n", switch_info->hierarchy_fixed);
+
     SAI_DEBUG("Max Number of Hierarchy levels supported per port %d\r\n", switch_info->max_hierarchy_levels);
 
     SAI_DEBUG("Max Number of Childs per Hierarchy node %d\r\n", switch_info->max_childs_per_hierarchy_node);
+
+    SAI_DEBUG("Max Number of ingress service pools %d\r\n", switch_info->ing_max_buf_pools);
+
+    SAI_DEBUG("Max Number of egress service pools %d\r\n", switch_info->egr_max_buf_pools);
+
+    SAI_DEBUG("Max Number of tiles per service pool %d\r\n", switch_info->tiles_per_buf_pool);
+
+    SAI_DEBUG("Max buffer size per tile %d\r\n", switch_info->max_tile_buffer_size);
+
+    SAI_DEBUG("Max buffer size in switch %d\r\n", switch_info->max_buffer_size);
 
     sai_switch_capability_flag_dump();
 }

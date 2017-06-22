@@ -89,10 +89,16 @@
 #define SAI_ATTR_L2_TABLE_SIZE             "l2_table"
 
 /**
- * @def SAI_ATTR_L3_TABLE_SIZE
- * Attribute used for representing the L3 table size
+ * @def SAI_ATTR_L3_HOST_TABLE_SIZE
+ * Attribute used for representing the L3 host table size
  */
-#define SAI_ATTR_L3_TABLE_SIZE             "l3_table"
+#define SAI_ATTR_L3_HOST_TABLE_SIZE        "l3_host_table"
+
+/**
+ * @def SAI_ATTR_L3_ROUTE_TABLE_SIZE
+ * Attribute used for representing the L3 route table size
+ */
+#define SAI_ATTR_L3_ROUTE_TABLE_SIZE       "l3_route_table"
 
 /**
  * @def SAI_ATTR_QUEUE_COUNT
@@ -120,11 +126,24 @@
 #define SAI_ATTR_HIERARCHY_LEVELS          "hierarchy_levels"
 
 /**
+ * @def SAI_ATTR_HIERARCHY_FIXED
+ * Attribute used for representing scheduler group hierarchy is fixed/flexible.
+ *
+ */
+#define SAI_ATTR_HIERARCHY_FIXED          "hierarchy_fixed"
+
+/**
  * @def SAI_ATTR_MAX_BUFFER_SIZE
  * Attribute used for representing the max buffer size
  * supported per NPU
  */
 #define SAI_ATTR_MAX_BUFFER_SIZE           "max_buffer_size"
+
+/**
+ * @def SAI_ATTR_MAX_TILE_BUFFER_SIZE
+ * Attribute used for representing the max buffer size per tile
+ */
+#define SAI_ATTR_MAX_TILE_BUFFER_SIZE           "max_tile_buffer_size"
 
 /**
  * @def SAI_ATTR_MAX_HIERARCHY_CHILDS
@@ -164,6 +183,13 @@
  * Attribute used for representing the maximum number of service pools at egress
  */
 #define SAI_ATTR_EGR_MAX_BUF_POOLS           "egr_max_buf_pools"
+
+/**
+ * @def SAI_ATTR_TILES_PER_BUF_POOL
+ * Attribute used for representing the tiles per buffer pool
+ */
+#define SAI_ATTR_TILES_PER_BUF_POOL          "tiles_per_buf_pool"
+
 
 /**
  * @def SAI_ATTR_BIT_MASK
@@ -605,6 +631,30 @@ static inline void sai_std_config_attr_update(std_config_node_t node,
     node_attr = std_config_attr_get(node, attr);
     if(node_attr != NULL) {
         *data = (uint_t) strtoul(node_attr, NULL, base);
+    }
+}
+
+/**
+ * @brief This api takes a config node and attribute to be looked in that node;
+ *        if attr is present, it converts the string to ul according to the given
+ *        base value and assigns the converted value to data.
+ *
+ * @param[in] node config node
+ * @param[in] attr string to be searched in the config node
+ * @param[out] data pointer to the data to be updated
+ * @param[in] base base value for string to l conversion
+ */
+static inline void sai_std_config_attr_int_update(std_config_node_t node,
+                                                  const char *attr,
+                                                  int *data, uint_t base)
+{
+    char *node_attr = NULL;
+    STD_ASSERT(data != NULL);
+    STD_ASSERT(attr != NULL);
+
+    node_attr = std_config_attr_get(node, attr);
+    if(node_attr != NULL) {
+        *data = (int)strtol(node_attr, NULL, base);
     }
 }
 

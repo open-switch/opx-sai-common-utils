@@ -129,7 +129,7 @@ typedef struct _sai_fib_router_interface_t {
 
     union {
         sai_object_id_t  port_id;
-        sai_vlan_id_t    vlan_id;
+        sai_object_id_t  vlan_id;
     } attachment;
 
     /** RIF attributes */
@@ -196,6 +196,9 @@ typedef struct _sai_fib_nh_t {
 
     /** Packet action for the next-hop. */
     sai_packet_action_t         packet_action;
+
+    /** True if Unable to resolve port id from FDB entry */
+    bool                        port_unresolved;
 
     /** Back reference to NH group(s). Nodes of type sai_fib_wt_link_node_t,
      * the 'self' field points to sai_fib_nh_group_t */

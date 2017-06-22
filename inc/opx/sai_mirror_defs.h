@@ -98,7 +98,7 @@ typedef struct _sai_mirror_session_info_t {
     sai_object_id_t session_id;
 
     /** Mirror type SPAN/RSPAN/ERSPAN */
-    sai_mirror_type_t span_type;
+    sai_mirror_session_type_t span_type;
 
     /** Mirror session parameters based on SPAN/RSPAN/ERSPAN */
     sai_mirror_session_params_t session_params;

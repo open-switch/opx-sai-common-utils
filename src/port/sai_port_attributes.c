@@ -66,6 +66,8 @@ void sai_port_attr_info_defaults_init(sai_port_attr_info_t *port_attr_info)
     port_attr_info->fdb_learn_limit_violation = SAI_DFLT_FDB_LEARNED_LIMIT_VIOL;
     port_attr_info->flow_control_mode = SAI_DFLT_FLOW_CONTROL_MODE;
     port_attr_info->pfc_enabled_bitmap = SAI_DFLT_PFC_ENABLED_BITMAP;
+    port_attr_info->fec_mode = SAI_DFLT_FEC_MODE;
+    port_attr_info->oui_code = SAI_DFLT_OUI_CODE;
     port_attr_info->default_init = true;
 }
 
@@ -185,11 +187,11 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
             port_attr_info->drop_tagged = attr->value.booldata;
             break;
 
-        case SAI_PORT_ATTR_INTERNAL_LOOPBACK:
+        case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
             port_attr_info->internal_loopback = attr->value.s32;
             break;
 
-        case SAI_PORT_ATTR_FDB_LEARNING:
+        case SAI_PORT_ATTR_FDB_LEARNING_MODE:
             port_attr_info->fdb_learning = attr->value.s32;
             break;
 
@@ -205,7 +207,7 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
             port_attr_info->max_learned_address = attr->value.u32;
             break;
 
-        case SAI_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION:
+        case SAI_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
             port_attr_info->fdb_learn_limit_violation = attr->value.s32;
             break;
 
@@ -213,7 +215,7 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
             port_attr_info->meta_data = attr->value.u32;
             break;
 
-        case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL:
+        case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
             port_attr_info->flow_control_mode = attr->value.s32;
             break;
 
@@ -221,8 +223,16 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
             port_attr_info->pfc_enabled_bitmap = attr->value.u8;
             break;
 
+        case SAI_PORT_ATTR_FEC_MODE:
+            port_attr_info->fec_mode = attr->value.s32;
+            break;
+
+        case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
+            port_attr_info->oui_code = attr->value.u32;
+            break;
+
         default:
-            SAI_PORT_LOG_ERR("Attribute %d not in cache list for port 0x%"PRIx64"",
+            SAI_PORT_LOG_TRACE("Attribute %d not in cache list for port 0x%"PRIx64"",
                              attr->id, port_id);
     }
 
@@ -287,11 +297,11 @@ sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
             attr->value.booldata = port_attr_info->drop_tagged;
             break;
 
-        case SAI_PORT_ATTR_INTERNAL_LOOPBACK:
+        case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
             attr->value.s32 = port_attr_info->internal_loopback;
             break;
 
-        case SAI_PORT_ATTR_FDB_LEARNING:
+        case SAI_PORT_ATTR_FDB_LEARNING_MODE:
             attr->value.s32 = port_attr_info->fdb_learning;
             break;
 
@@ -307,11 +317,11 @@ sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
             attr->value.u32 = port_attr_info->max_learned_address;
             break;
 
-        case SAI_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION:
+        case SAI_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
             attr->value.s32 = port_attr_info->fdb_learn_limit_violation;
             break;
 
-        case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL:
+        case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
             attr->value.s32 = port_attr_info->flow_control_mode;
             break;
 
@@ -319,8 +329,16 @@ sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
             attr->value.u8 = port_attr_info->pfc_enabled_bitmap;
             break;
 
+        case SAI_PORT_ATTR_FEC_MODE:
+            attr->value.s32 = port_attr_info->fec_mode;
+            break;
+
+        case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
+            attr->value.u32 = port_attr_info->oui_code;
+            break;
+
         default:
-            SAI_PORT_LOG_ERR("Attribute %d not in cache list for port 0x%"PRIx64"",
+            SAI_PORT_LOG_TRACE("Attribute %d not in cache list for port 0x%"PRIx64"",
                              attr->id, port_id);
             return SAI_STATUS_INVALID_ATTRIBUTE_0;
     }

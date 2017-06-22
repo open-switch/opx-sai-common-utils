@@ -87,8 +87,8 @@ dn_sai_tunnel_term_entry_t *dn_sai_tunnel_term_entry_get (
 
 static inline bool dn_sai_is_ip_tunnel (dn_sai_tunnel_t *p_tunnel_obj)
 {
-    return ((p_tunnel_obj->tunnel_type == SAI_TUNNEL_IPINIP) ||
-            (p_tunnel_obj->tunnel_type == SAI_TUNNEL_IPINIP_GRE) ? true : false);
+    return ((p_tunnel_obj->tunnel_type == SAI_TUNNEL_TYPE_IPINIP) ||
+            (p_tunnel_obj->tunnel_type == SAI_TUNNEL_TYPE_IPINIP_GRE) ? true : false);
 }
 
 static inline rbtree_handle dn_sai_tunnel_tree_handle (void)

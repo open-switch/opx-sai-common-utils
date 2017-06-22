@@ -367,32 +367,20 @@ typedef struct _dn_sai_qos_queue_t
     /** Key structure for Queue tree */
     dn_sai_qos_queue_key_t  key;
 
+    /** Type of the queue. */
+    sai_queue_type_t        queue_type;
+
     /** SAI Port Identifier */
     sai_object_id_t         port_id;
 
+    /** Queue Index **/
+    sai_uint8_t             queue_index;
+
+    /** Parent scheduler group node */
+    sai_object_id_t         parent_sched_group_id;
+
     /** Buffer profile Object ID */
     sai_object_id_t         buffer_profile_id;
-
-    /** Link to the port queue list */
-    std_dll                 port_dll_glue;
-
-    /** Link to the WRED queue list */
-    std_dll                 wred_dll_glue;
-
-    /** Link to the Scheduler queue list */
-    std_dll                 scheduler_dll_glue;
-
-    /** Link to the Child list of parent Scheduler group */
-    std_dll                 child_queue_dll_glue;
-
-    /** Link to the buffer profile associated to the queue */
-    std_dll                 buffer_profile_dll_glue;
-
-    /** Child index of queue in parent scheduler group */
-    uint_t                  child_offset;
-
-    /** Type of the queue. */
-    sai_queue_type_t        queue_type;
 
     /** WRED profile id attached to queue */
     sai_object_id_t         wred_id;
@@ -400,8 +388,23 @@ typedef struct _dn_sai_qos_queue_t
     /** Scheduler profile id attached to queue */
     sai_object_id_t         scheduler_id;
 
-    /** Parent scheduler group node */
-    sai_object_id_t         parent_sched_group_id;
+    /** Child index of queue in parent scheduler group */
+    uint_t                  child_offset;
+
+    /** Link to the port queue list */
+    std_dll                 port_dll_glue;
+
+    /** Link to the Child list of parent Scheduler group */
+    std_dll                 child_queue_dll_glue;
+
+    /** Link to the WRED queue list */
+    std_dll                 wred_dll_glue;
+
+    /** Link to the buffer profile associated to the queue */
+    std_dll                 buffer_profile_dll_glue;
+
+    /** Link to the Scheduler queue list */
+    std_dll                 scheduler_dll_glue;
 
 } dn_sai_qos_queue_t;
 
@@ -463,12 +466,6 @@ typedef struct _dn_sai_qos_scheduler_t
  */
 typedef struct _dn_sai_qos_hierarchy_info_t {
 
-    /** Parent scheduler group node */
-    sai_object_id_t               parent_sched_group_id;
-
-    /** Maximum childs supported on group */
-    uint_t                        max_childs;
-
    /** Scheduler group child list head. Nodes of type dn_sai_qos_sched_group_t */
     std_dll_head                  child_sched_group_dll_head;
 
@@ -505,11 +502,17 @@ typedef struct _dn_sai_qos_sched_group_t
     /** SAI Port Identifier */
     sai_object_id_t               port_id;
 
+    /** Parent scheduler group node */
+    sai_object_id_t               parent_id;
+
     /** Hierarchy level */
     uint_t                        hierarchy_level;
 
     /** Max children at each level */
     uint_t                        max_childs;
+
+    /** Scheduler profile id attached to group */
+    sai_object_id_t               scheduler_id;
 
     /** True if the node contains a dummy child in NPU
         Dummy nodes are needed in the hierarchy due to chip specific restrictions as in
@@ -530,9 +533,6 @@ typedef struct _dn_sai_qos_sched_group_t
 
     /** Hierarchy Information for group */
     dn_sai_qos_hierarchy_info_t   hqos_info;
-
-    /** Scheduler profile id attached to group */
-    sai_object_id_t               scheduler_id;
 
 } dn_sai_qos_sched_group_t;
 
@@ -636,6 +636,9 @@ typedef struct _dn_sai_qos_buffer_pool_t
 
     /** Buffer profile list head. Nodes of type dn_sai_qos_buffer_profile_t */
     std_dll_head                   buffer_profile_dll_head;
+
+    /** Place holder for NPU-specific data */
+    void            *hw_info;
 
 } dn_sai_qos_buffer_pool_t;
 
@@ -852,17 +855,6 @@ typedef struct _dn_sai_qos_hierarchy_t
     dn_sai_qos_level_info_t *level_info;
 }dn_sai_qos_hierarchy_t;
 
-/**
- * @brief Structure containing information about NPU specifc buffer pool data
- */
-typedef struct _dn_sai_qos_npu_buffer_info_t
-{
-    uint_t  ing_max_buf_pools;
-    uint_t  egr_max_buf_pools;
-    uint_t  max_buffer_size;
-    uint_t  cell_size;
-    uint_t  num_pg;
-}sai_qos_npu_buffer_info_t;
 /**
 \}
 */

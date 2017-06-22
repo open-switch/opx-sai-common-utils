@@ -23,6 +23,7 @@
 #ifndef _SAI_ACL_NPU_API_H_
 #define _SAI_ACL_NPU_API_H_
 
+#include "sai_common_utils.h"
 #include "sai_acl_type_defs.h"
 #include "std_type_defs.h"
 #include "saistatus.h"
@@ -230,6 +231,65 @@ typedef void (*sai_npu_dump_acl_rule)(const sai_acl_rule_t *acl_rule);
 typedef void (*sai_npu_dump_acl_counter)(const sai_acl_counter_t *acl_counter);
 
 /**
+ * @brief Create ACL range id in NPU
+ *
+ * @param[in] acl_range Pointer to acl range node
+ */
+typedef sai_status_t (*sai_npu_create_acl_range_fn) (sai_acl_range_t *acl_range);
+
+/**
+ * @brief Delete ACL range id in NPU
+ *
+ * @param[in] acl_range Pointer to acl range node
+ */
+typedef sai_status_t (*sai_npu_delete_acl_range_fn) (sai_acl_range_t *acl_range);
+
+/**
+ * @brief Set ACL range id attributes in NPU
+ *
+ * @param[in] acl_range  Pointer to acl range node
+ * @param[in] attr_count Number of attributes to set
+ * @param[in] p_attr     Pointer to the attribute list
+ */
+typedef sai_status_t (*sai_npu_range_set_fn)(sai_acl_range_t *acl_range,
+                                             uint_t attr_count, const sai_attribute_t *p_attr);
+
+/**
+ * @brief Set ACL range id attributes in NPU
+ *
+ * @param[in] acl_range  Pointer to acl range node
+ * @param[in] attr_count Number of attributes to set
+ * @param[inout] p_attr_list  Pointer to the attribute list to get
+ */
+typedef sai_status_t (*sai_npu_range_get_fn)(sai_acl_range_t *acl_range,
+                                             uint_t attr_count, sai_attribute_t *p_attr_list);
+
+/**
+ *  @brief Get Vendor attribute properties table
+ *
+ * @param[out] vendor_attr Vendor attribute table
+ * @param[out] max_count Maximum attribute count
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef void (*sai_npu_attribute_table_get_fn) (
+                                            const dn_sai_attribute_entry_t **p_vendor_attr,
+                                            uint_t *p_max_count);
+
+/**
+ *  @brief Dump the counters from all acl entries.
+ *
+ */
+typedef void (*sai_npu_dump_counters) (void);
+
+/**
+ *  @brief Dump the counter of a specific entry.
+ *
+ *  @param[in] entry_id Entry for which counter should be dumped.
+ */
+typedef void (*sai_npu_dump_counter_per_entry) (int entry_id);
+
+/**
  * @brief ACL NPU API table.
  */
 typedef struct _sai_npu_acl_api_t {
@@ -252,6 +312,13 @@ typedef struct _sai_npu_acl_api_t {
     sai_npu_dump_acl_table                    dump_acl_table;
     sai_npu_dump_acl_rule                     dump_acl_rule;
     sai_npu_dump_acl_counter                  dump_acl_counter;
+    sai_npu_create_acl_range_fn               create_acl_range;
+    sai_npu_delete_acl_range_fn               delete_acl_range;
+    sai_npu_range_set_fn                      set_acl_range;
+    sai_npu_range_get_fn                      get_acl_range;
+    sai_npu_attribute_table_get_fn            attribute_table_get;
+    sai_npu_dump_counters                     dump_all_counters;
+    sai_npu_dump_counter_per_entry            dump_entry_counter;
 } sai_npu_acl_api_t;
 
 /**

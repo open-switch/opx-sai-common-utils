@@ -27,12 +27,40 @@
 #include "sai.h"
 #include "std_type_defs.h"
 
+#define SAI_NUM_API_ID (SAI_API_END - SAI_API_START)
+#define SAI_NUM_API_CUSTOM_ID (SAI_API_CUSTOM_RANGE_END - SAI_API_CUSTOM_RANGE_START)
+#define SAI_API_CUSTOM_CHECK(ID) ((ID >= SAI_API_CUSTOM_RANGE_START) && (ID < SAI_API_CUSTOM_RANGE_END))
+#define SAI_API_CUSTOM_INDEX(ID) (ID - SAI_API_CUSTOM_RANGE_START)
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C"{
 #endif
-/** Maximum count of SAI API Id. To be updated when a new API is added */
-#define SAI_MAX_API_ID (SAI_API_UDF + 1)
+
+/** SAI GEN API - Check if SAI OID is already in use
+    \param[in] id SAI OID
+    \return Success: If OID in use
+            Failure: Otherwise
+*/
+typedef bool (*dn_sai_id_in_use_check_fn)(uint64_t id);
+
+/** SAI GEN API - Reentrant buffer for dn_sai_get_next_free_id */
+typedef struct _dn_sai_id_gen_info {
+    /** current_id: Most recent used id */
+    uint64_t cur_id;
+    /** is_wrappped: Set if current_id is wrapped around */
+    bool is_wrappped;
+    /** mask: Max possible ID. Used to identify wrap around */
+    uint64_t mask;
+    /** is_id_in_use: Function to check if ID is already in use */
+    dn_sai_id_in_use_check_fn is_id_in_use;
+} dn_sai_id_gen_info_t;
+
+/** SAI GEN API - Get next free unused SAI OID
+    \param[in,out] info Pointer to rentrant buffer
+    \return Success: SAI_STATUS_SUCCESS cur_id is the newly generated ID
+            Failure: SAI_STATUS_FAILURE
+ */
+sai_status_t dn_sai_get_next_free_id(dn_sai_id_gen_info_t *info);
 
 /** SAI GEN API - Get indexed attribute return type
       \param[in] ret_val Original attribute return val with index 0

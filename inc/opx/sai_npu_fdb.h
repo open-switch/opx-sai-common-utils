@@ -28,6 +28,7 @@
 #include "saistatus.h"
 #include "saiswitch.h"
 #include "sai_fdb_common.h"
+#include "sai_fdb_api.h"
 
 /** SAI NPU FDB -Perform FDB NPU related initialization
     \return Success: SAI_STATUS_SUCCESS
@@ -52,25 +53,20 @@ typedef sai_status_t (*sai_npu_flush_all_fdb_entries_fn)(sai_object_id_t port_id
   \return Success: SAI_STATUS_SUCCESS
 Failure: SAI_STATUS_FAILURE
  */
-typedef sai_status_t (*sai_npu_flush_fdb_entry_fn)(const sai_fdb_entry_t* fdb_entry);
+typedef sai_status_t (*sai_npu_flush_fdb_entry_fn)(const sai_fdb_entry_t* fdb_entry, bool validate_port);
 
 /** SAI NPU FDB - Create FDB entry
   \param[in] fdb_entry Which has members MAC address and VLAN
-  \param[in] attr_list The list of attributes. The mandatory attributes are
-  \param[in] entry_type Type of the entry- static/dynamic
-  \param[in] port_id Port id
-  \param[in] action Action - Forward/Trap/Log/Drop
-  \param[in] metadata FDB Metadata
+  \param[in] fdb_entry_node_data Data related to FDB entry such as port, type, action, etc.
+  \param[in] validate_port If set to true, check if port in hardware and FDB cache are same. If they are not
+             same don't remove entry and return error
   \return Success: SAI_STATUS_SUCCESS
 Failure: SAI_STATUS_FAILURE,SAI_STATUS_INVALID_ATTRIBUTE,
 SAI_STATUS_INVALID_ATTR_VALUE,SAI_STATUS_NOT_SUPPORTED
  */
 
 typedef sai_status_t (*sai_npu_create_fdb_entry_fn)(const sai_fdb_entry_t *fdb_entry,
-                                                    sai_object_id_t port_id,
-                                                    sai_fdb_entry_type_t entry_type,
-                                                    sai_packet_action_t action,
-                                                    uint_t metadata);
+                                                    sai_fdb_entry_node_t *fdb_entry_node_data);
 
 /** SAI NPU FDB - Get FDB Entry from hardware
   \param[in] fdb_entry Which has members MAC address and VLAN
@@ -166,8 +162,8 @@ typedef sai_status_t (*sai_npu_get_aging_time_fn)(uint32_t *value);
   \return Success: SAI_STATUS_SUCCESS
 Failure: SAI_STATUS_FAILURE
  */
-typedef sai_status_t (*sai_npu_register_callback_fn)(sai_fdb_event_notification_fn
-                                                     fdb_notification_fn);
+typedef sai_status_t (*sai_npu_register_callback_fn)(sai_fdb_npu_event_notification_fn
+                                                     fdb_npu_notification_fn);
 
 /** SAI NPU FDB - Get FDB table size
   \param[out] attr Attribute containing table size in value.u32
@@ -204,6 +200,10 @@ Failure: SAI_STATUS_NOT_SUPPORTED
  */
 typedef sai_status_t (*sai_npu_mcast_cpu_flood_enable_get_fn)(bool *enable);
 
+/** SAI FDB API - Register internal flush callback
+    \param[in] flush_fdb_entry Function pointer to flush callback function
+*/
+void sai_fdb_npu_flush_callback_cache_update (sai_npu_flush_fdb_entry_fn flush_fdb_entry);
 
 /**
  * @brief FDB NPU API table.

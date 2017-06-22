@@ -121,7 +121,7 @@ typedef sai_status_t (*sai_npu_stp_attribute_get_fn) (sai_object_id_t stp_inst_i
  */
 typedef sai_status_t (*sai_npu_stp_port_state_set_fn) (sai_object_id_t stp_inst_id,
                                                        sai_object_id_t port_id,
-                                                       sai_port_stp_state_t state);
+                                                       sai_stp_port_state_t state);
 
 /**
  * @brief Get stp port state
@@ -134,7 +134,7 @@ typedef sai_status_t (*sai_npu_stp_port_state_set_fn) (sai_object_id_t stp_inst_
  */
 typedef sai_status_t (*sai_npu_stp_port_state_get_fn) (sai_object_id_t stp_inst_id,
                                                        sai_object_id_t port_id,
-                                                       sai_port_stp_state_t *p_state);
+                                                       sai_stp_port_state_t *p_state);
 
 /**
  * @brief Retrieve the STP instance for the given vlan

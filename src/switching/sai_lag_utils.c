@@ -318,6 +318,7 @@ sai_status_t sai_lag_port_list_get(sai_object_id_t lag_id,
         lag_port_list->list[port_index] = lag_port_node->port_id;
         port_index++;
     }
+    lag_port_list->count = port_index;
     return SAI_STATUS_SUCCESS;
 }
 
@@ -370,33 +371,6 @@ sai_status_t sai_lag_npu_object_id_get (sai_object_id_t lag_id,
         return SAI_STATUS_SUCCESS;
     }
     return SAI_STATUS_INVALID_OBJECT_TYPE;
-}
-
-sai_status_t sai_lag_update_rif_id (sai_object_id_t lag_id, sai_object_id_t rif_id)
-{
-    sai_lag_node_t *lag_node = NULL;
-
-    sai_lag_lock();
-    lag_node = sai_lag_node_get(lag_id);
-    if(lag_node == NULL) {
-        sai_lag_unlock();
-        SAI_LAG_LOG_ERR("Unable to find LAG Object for ID 0x%"PRIx64"", lag_id);
-        return SAI_STATUS_ITEM_NOT_FOUND;
-    }
-    lag_node->rif_id = rif_id;
-    sai_lag_unlock();
-    return SAI_STATUS_SUCCESS;
-}
-sai_object_id_t sai_lag_get_rif_id (sai_object_id_t lag_id)
-{
-    sai_object_id_t rif_id = 0;
-    sai_lag_node_t *lag_node = NULL;
-
-    lag_node = sai_lag_node_get(lag_id);
-    if(lag_node != NULL) {
-        rif_id = lag_node->rif_id;
-    }
-    return rif_id;
 }
 
 sai_status_t sai_lag_member_get_disable_status (sai_object_id_t  lag_id,

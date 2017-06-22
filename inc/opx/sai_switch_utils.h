@@ -72,15 +72,8 @@
 /** Number of default switch hash fields */
 #define SAI_SWITCH_DEFAULT_HASH_FIELDS_COUNT (4)
 
-/**
- * @brief Call back functions for event notifications
- *
- * @param[in] switch_notifications - structure with function pointers for callback
- * @return STD_ERR_OK on success otherwise a different code is returned
- */
-
-sai_status_t sai_switch_populate_event_callbacks(sai_switch_notification_t *
-                                                 switch_notifications);
+/** Default switch ID init **/
+#define SAI_DEFAULT_SWITCH_ID 0
 
 /**
  * @brief Initializes the switch info table and updates the switch info based on
@@ -90,8 +83,7 @@ sai_status_t sai_switch_populate_event_callbacks(sai_switch_notification_t *
  * @param[in] pointer to switch initialization config
  *
  */
-void sai_switch_info_initialize(sai_switch_id_t switch_id,
-                                const sai_switch_init_config_t *switch_info);
+void sai_switch_info_initialize(const sai_switch_init_config_t *switch_info);
 
 /**
  * @brief Allocate memory for switch info table
@@ -455,6 +447,42 @@ static inline uint_t sai_switch_egr_max_buf_pools_get (void)
 }
 
 /**
+ * @brief Get the maximum number of tiles per buffer  pool
+ *
+ * @return Maximum number of tiles per buffer pool
+ */
+static inline uint_t sai_switch_max_tiles_per_buf_pool_get (void)
+{
+    sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
+
+    return (sai_switch_info_ptr->tiles_per_buf_pool);
+}
+
+/**
+ * @brief Get the maximum buffer size per tile in the switch
+ *
+ * @return Maximum supported buffer size per tile in the switch
+ */
+static inline uint_t sai_switch_max_tile_buffer_size_get (void)
+{
+    sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
+
+    return (sai_switch_info_ptr->max_tile_buffer_size);
+}
+
+/**
+ * @brief Check if tiles per buffer pool supported or not in the switch
+ *
+ * @return true if supported else false
+ */
+static inline bool sai_switch_is_tiles_per_buf_pool_supported (void)
+{
+    sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
+
+    return ((sai_switch_info_ptr->max_tile_buffer_size != 0) ? true : false);
+}
+
+/**
  * @brief Get the maximum traffic class supported per port in the switch
  *
  * @return Maximum supported tarffic class per port in switch
@@ -602,28 +630,28 @@ static inline void sai_switch_fdb_table_size_set(uint_t fdb_table_size)
     sai_switch_info_ptr->l2_table_size = fdb_table_size;
 }
 
-static inline uint_t sai_switch_l3_table_size_get(void)
+static inline uint_t sai_switch_l3_route_table_size_get(void)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
-    return (sai_switch_info_ptr->l3_table_size);
+    return (sai_switch_info_ptr->l3_route_table_size);
 }
 
-static inline void sai_switch_l3_table_size_set(uint_t l3_table_size)
+static inline void sai_switch_l3_route_table_size_set(uint_t l3_route_table_size)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
-    sai_switch_info_ptr->l3_table_size = l3_table_size;
+    sai_switch_info_ptr->l3_route_table_size = l3_route_table_size;
 }
 
-static inline uint_t sai_switch_neighbor_table_size_get(void)
+static inline uint_t sai_switch_l3_host_table_size_get(void)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
-    return (sai_switch_info_ptr->neighbor_table_size);
+    return (sai_switch_info_ptr->l3_host_table_size);
 }
 
-static inline void sai_switch_neighbor_table_size_set(uint_t neighbor_table_size)
+static inline void sai_switch_l3_host_table_size_set(uint_t l3_host_table_size)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
-    sai_switch_info_ptr->neighbor_table_size = neighbor_table_size;
+    sai_switch_info_ptr->l3_host_table_size = l3_host_table_size;
 }
 
 static inline uint_t sai_switch_num_lag_members_get(void)

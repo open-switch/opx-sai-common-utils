@@ -100,6 +100,11 @@ bool sai_shell_cmd_add(const char *cmd_name,sai_shell_function fun,const char *d
  */
 sai_status_t sai_shell_start(void);
 
+/**
+ * This will enable/ disable shell redirect logs.
+ */
+sai_status_t sai_shell_set(bool status);
+
 
 /**
  * Run a shell command - this allows the use of any created shell command incuding

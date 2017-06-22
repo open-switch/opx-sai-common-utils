@@ -44,6 +44,7 @@
 
 /** ACL Rule Default Admin State */
 #define SAI_ACL_RULE_DEFAULT_ADMIN_STATE 2
+
 /**
  * @brief SAI ACL Table ID generator Data Structure
  *
@@ -73,6 +74,15 @@ typedef struct _sai_acl_node_t {
 
     /** Nodes of type sai_acl_counter_t */
     rbtree_handle sai_acl_counter_tree;
+
+    /** Nodes of type sai_acl_table_group_t */
+    rbtree_handle sai_acl_table_group_tree;
+
+    /** Nodes of type sai_acl_table_group_member_t */
+    rbtree_handle sai_acl_table_group_member_tree;
+
+    /** Nodes of type sai_acl_range_t */
+    rbtree_handle sai_acl_range_tree;
 } sai_acl_node_t, *acl_node_pt;
 
 /**
@@ -347,5 +357,70 @@ typedef struct _sai_acl_counter_t {
       /** Contains ACL Counter related NPU specific information */
       void                         *npu_counter_info;
 } sai_acl_counter_t;
+
+
+typedef struct _sai_acl_table_group_t {
+
+    /** Key to the acl group tree */
+    sai_object_id_t  acl_table_group_id;
+
+    /** Acl stage ingress/egress sai_acl_stage_t */
+    sai_acl_stage_t  acl_stage;
+
+    /** List of points where the group/table is to be applied
+     * Includes port,lag,vlan,rif and switch */
+    sai_s32_list_t  acl_bind_list;
+
+    /** Lookup type parallel/sequential */
+    sai_acl_table_group_type_t acl_group_type;
+
+    /** List of the ACL tables part of this group */
+    std_dll_head   table_list_head;
+
+    /** Number of tables in the group */
+    uint_t table_count;
+
+    /** Reference count */
+    int ref_count;
+} sai_acl_table_group_t;
+
+
+typedef struct _sai_acl_table_group_member_t {
+
+    /** Link to group */
+    std_dll  member_link;
+    /** Key to the group_memeber tree */
+    sai_object_id_t  acl_table_group_member_id;
+
+    /** group id that this table id is part of */
+    sai_object_id_t  acl_group_id;
+
+    /** table id which is part of the acl group */
+    sai_object_id_t  acl_table_id;
+
+    /** Priority of the acl table */
+    sai_uint32_t     priority;
+
+    /** Reference count */
+    int ref_count;
+} sai_acl_table_group_member_t;
+
+typedef struct _sai_acl_range_t {
+
+    /** Key to sai_acl_range tree */
+    sai_object_id_t      acl_range_id;
+
+    /** Type of range */
+    sai_acl_range_type_t range_type;
+
+    /** Min and max limits of range */
+    sai_s32_range_t     range_limit;
+
+    /** Npu range information */
+    void  *npu_range_info;
+
+    /** reference count */
+    int ref_count;
+} sai_acl_range_t;
 
 #endif /* _SAI_ACL_TYPE_DEFS_H_ */

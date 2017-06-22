@@ -99,7 +99,7 @@ typedef sai_status_t (*sai_npu_mirror_session_port_remove_fn) (sai_object_id_t s
  *  error code is returned.
  */
 typedef sai_status_t (*sai_npu_mirror_session_set_fn) (sai_object_id_t session_id,
-                                                       sai_mirror_type_t span_type,
+                                                       sai_mirror_session_type_t span_type,
                                                        const sai_attribute_t *attr);
 
 /**
@@ -112,7 +112,7 @@ typedef sai_status_t (*sai_npu_mirror_session_set_fn) (sai_object_id_t session_i
  *  error code is returned.
  */
 typedef sai_status_t (*sai_npu_mirror_session_get_fn) (sai_object_id_t session_id,
-                                                       sai_mirror_type_t span_type,
+                                                       sai_mirror_session_type_t span_type,
                                                        uint32_t attr_count,
                                                        sai_attribute_t *attr_list);
 

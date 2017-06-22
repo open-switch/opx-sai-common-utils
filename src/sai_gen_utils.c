@@ -32,7 +32,9 @@
 
 #define SAI_SWITCH_ID_STR_LEN 50
 
-sai_log_level_t g_sai_api_log_level [SAI_MAX_API_ID];
+sai_log_level_t g_sai_api_log_level [SAI_NUM_API_ID];
+sai_log_level_t g_sai_api_custom_log_level [SAI_NUM_API_CUSTOM_ID];
+
 char g_sai_switch_id_str [SAI_SWITCH_ID_STR_LEN] = "INVALID";
 
 static inline sai_status_t get_indexed_ret_val(sai_status_t ret_val,
@@ -224,14 +226,18 @@ const char* sai_switch_id_str_get (void)
 
 static inline sai_log_level_t sai_log_level_get (sai_api_t api_id)
 {
-    return ((api_id < SAI_MAX_API_ID) ? g_sai_api_log_level [api_id] : SAI_LOG_LEVEL_WARN);
+    return ((api_id < SAI_NUM_API_ID) ? g_sai_api_log_level [api_id] :
+    SAI_API_CUSTOM_CHECK(api_id)?g_sai_api_custom_log_level[SAI_API_CUSTOM_INDEX(api_id)]:SAI_LOG_LEVEL_WARN);
 }
 
 void sai_log_level_set (sai_api_t api_id, sai_log_level_t level)
 {
-    if (api_id < SAI_MAX_API_ID) {
+    if (api_id < SAI_NUM_API_ID) {
         g_sai_api_log_level [api_id] = level;
+    } else if (SAI_API_CUSTOM_CHECK(api_id)) {
+        g_sai_api_custom_log_level [SAI_API_CUSTOM_INDEX(api_id)] = level;
     }
+
 }
 
 bool sai_is_log_enabled (sai_api_t api_id, sai_log_level_t level)
@@ -246,7 +252,12 @@ void sai_log_init (void)
     sai_switch_id_strify ();
 
     /* Set the log level to LOG_WARN for all SAI API modules */
-    for (api_id = 0; api_id < SAI_MAX_API_ID; api_id++)
+    for (api_id = 0; api_id < SAI_NUM_API_ID; api_id++)
+    {
+        sai_log_level_set (api_id, SAI_LOG_LEVEL_WARN);
+    }
+    for (api_id = SAI_API_CUSTOM_RANGE_START;
+            api_id < SAI_API_CUSTOM_RANGE_END; api_id++)
     {
         sai_log_level_set (api_id, SAI_LOG_LEVEL_WARN);
     }
@@ -293,4 +304,29 @@ bool dn_sai_check_duplicate_attr(uint32_t attr_count, const sai_attribute_t *att
         }
     }
     return false;
+}
+
+sai_status_t dn_sai_get_next_free_id(dn_sai_id_gen_info_t *info)
+{
+    uint64_t tmp_id = 0;
+
+    info->cur_id = (info->cur_id + 1) & info->mask;
+
+    if(!info->cur_id) {
+        info->is_wrappped = true;
+    }
+
+    if(info->is_wrappped) {
+        tmp_id = info->cur_id;
+
+        while(info->is_id_in_use(info->cur_id)) {
+            info->cur_id = (info->cur_id + 1) & info->mask;
+            /* Exit criteria: ID search has wrapped around,
+               no free ID to be allocated */
+            if(tmp_id == info->cur_id)
+                return SAI_STATUS_FAILURE;
+        }
+    }
+
+    return SAI_STATUS_SUCCESS;
 }

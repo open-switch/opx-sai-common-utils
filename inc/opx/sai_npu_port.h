@@ -30,6 +30,8 @@
 #include "saiport.h"
 
 #include "std_type_defs.h"
+#include "sai_port_common.h"
+#include "sai_debug_utils.h"
 
 /** \defgroup SAINPUPORTAPI SAI - NPU port Functionality
  *   Port functions for SAI NPU component
@@ -37,6 +39,26 @@
  * \ingroup SAIPORTAPI
  * \{
  */
+
+/**
+ * @brief SAI Port create
+ *
+ * @param[out] port_id  Port Identifier
+   @param[in] attr_count Number of attributes
+ * @param[in] attr_list  Attribute id and value pairs
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_port_create_fn)(sai_object_id_t *port_id, uint32_t attr_count,
+                                                      const sai_attribute_t *attr_list);
+/**
+ * @brief SAI Port Remove
+ *
+ * @param[in] port_id  Port Identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_port_remove_fn)(sai_object_id_t port_id);
 
 /**
  * @brief Set port attribute
@@ -112,16 +134,6 @@ typedef void (*sai_npu_reg_link_state_cb_fn)(
                              sai_port_state_change_notification_fn link_state_cb_fn);
 
 /**
- * @brief Set the port breakout mode for the given set of port(s) in the port list.
- *
- * @param[in] portbreakout  pointer consisting of breakout mode to be set and list of
- *                          ports(s) to be configured
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-typedef sai_status_t (*sai_npu_port_breakout_set_fn)(const sai_port_breakout_t *portbreakout);
-
-/**
  * @brief Update the port packet switching mode based on the port event type ADD/DELETE and
  *  the port operating speed. As packet switching mode depends on port speed, it should be
  *  updated for events like ADD/DELETE during port breakout.
@@ -136,18 +148,33 @@ typedef sai_status_t (*sai_npu_port_switching_mode_update_fn)(uint32_t count,
                                                               sai_port_event_notification_t *data);
 
 /**
+ * @brief Enable/Disable link scan on a port
+ *
+ * @param[in] port_id Object ID of the port for which link scan needs to be enabled
+ * @param[in] enable  boolean to enable or disable linkscan
+ *
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_port_linkscan_mode_set_fn) (sai_object_id_t port_id, bool enable);
+
+/*Debug Function for SAI BCM port */
+typedef sai_status_t (*sai_npu_port_debug_fn) (sai_object_id_t port_id,sai_port_debug_function_t fn_name);
+/**
  * @brief PORT NPU API table.
  */
 typedef struct _sai_npu_port_api_t {
+    sai_npu_port_create_fn                      npu_port_create;
+    sai_npu_port_remove_fn                      npu_port_remove;
     sai_npu_port_set_attribute_fn               port_set_attribute;
     sai_npu_port_get_attribute_fn               port_get_attribute;
     sai_npu_port_get_stats_fn                   port_get_stats;
     sai_npu_port_clear_stats_fn                 port_clear_stats;
     sai_npu_port_clear_all_stats_fn             port_clear_all_stats;
     sai_npu_reg_link_state_cb_fn                reg_link_state_cb;
-    sai_npu_port_breakout_set_fn                breakout_set;
     sai_npu_port_switching_mode_update_fn       switching_mode_update;
-
+    sai_npu_port_linkscan_mode_set_fn           linkscan_mode_set;
+    sai_npu_port_debug_fn                       port_debug;
 } sai_npu_port_api_t;
 
 /**

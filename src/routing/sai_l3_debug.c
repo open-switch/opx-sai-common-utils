@@ -347,7 +347,7 @@ void sai_fib_dump_ip_nh_node (sai_fib_nh_t *p_next_hop)
     SAI_DEBUG ("************ Dumping IP Next Hop information *************");
     SAI_DEBUG ("p_nh_node: %p, NH Type: %s, IP Addr: %s, RIF: 0x%"PRIx64", "
                "Next Hop Id: 0x%"PRIx64", MAC: %s, Port: 0x%"PRIx64", "
-               "Packet action: %s, Owner flag: 0x%x, VRF: 0x%"PRIx64", "
+               "Packet action: %s, Port unresolved: %d Owner flag: 0x%x, VRF: 0x%"PRIx64", "
                "ref_count: %d.", p_next_hop,
                sai_fib_next_hop_type_str (p_next_hop->key.nh_type),
                sai_ip_addr_to_str (sai_fib_next_hop_ip_addr (p_next_hop),
@@ -355,7 +355,7 @@ void sai_fib_dump_ip_nh_node (sai_fib_nh_t *p_next_hop)
                p_next_hop->next_hop_id, std_mac_to_string ((const hal_mac_addr_t *)
                &p_next_hop->mac_addr, mac_addr_str, SAI_FIB_DBG_MAX_BUFSZ),
                p_next_hop->port_id, sai_packet_action_str (p_next_hop->packet_action),
-               p_next_hop->owner_flag,p_next_hop->vrf_id,
+               p_next_hop->port_unresolved, p_next_hop->owner_flag,p_next_hop->vrf_id,
                p_next_hop->ref_count);
 }
 

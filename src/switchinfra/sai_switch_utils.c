@@ -38,7 +38,6 @@
 #include "sai_l3_util.h"
 #include "sai_infra_api.h"
 
-static sai_switch_notification_t sai_switch_evt_table;
 
 /*
  * Global Switch info table that includes per port info as well
@@ -67,30 +66,6 @@ void sai_switch_unlock (void)
     std_mutex_unlock (&switch_lock);
 }
 
-sai_status_t sai_switch_populate_event_callbacks(sai_switch_notification_t *
-                                                 switch_notifications)
-{
-    if(switch_notifications != NULL)
-    {
-        sai_switch_lock();
-        sai_switch_evt_table.on_switch_state_change =
-            switch_notifications->on_switch_state_change;
-
-        sai_switch_evt_table.on_fdb_event =
-            switch_notifications->on_fdb_event;
-
-        sai_switch_evt_table.on_port_state_change =
-            switch_notifications->on_port_state_change;
-
-        sai_switch_evt_table.on_switch_shutdown_request =
-            switch_notifications->on_switch_shutdown_request;
-
-        sai_switch_unlock();
-    }
-
-    return SAI_STATUS_SUCCESS;
-}
-
 /* Allocate memory for switch info table */
 sai_switch_info_t *sai_switch_info_alloc(void)
 {
@@ -113,15 +88,13 @@ sai_switch_info_t *sai_switch_info_get(void)
 
 /* Initialize switch info table and fill Switch Information based
  * on the Initialization configuration */
-void sai_switch_info_initialize(sai_switch_id_t switch_id,
-                                const sai_switch_init_config_t *switch_info)
+void sai_switch_info_initialize(const sai_switch_init_config_t *switch_info)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
     STD_ASSERT(sai_switch_info_ptr != NULL);
 
     SAI_SWITCH_LOG_TRACE("Updates the switch info table based on init configuration");
 
-    sai_switch_info_ptr->switch_id = switch_id;
     sai_switch_info_ptr->switch_supported_capb = switch_info->supported_capb;
     sai_switch_info_ptr->switch_op_state = SAI_SWITCH_OPER_STATUS_UNKNOWN;
     sai_switch_info_ptr->switch_cpu_port = switch_info->cpu_port;
@@ -136,6 +109,7 @@ void sai_switch_info_initialize(sai_switch_id_t switch_id,
 
     sai_switch_info_ptr->max_childs_per_hierarchy_node =
         switch_info->max_childs_per_hierarchy_node;
+    sai_switch_info_ptr->hierarchy_fixed = switch_info->hierarchy_fixed;
     sai_switch_info_ptr->max_hierarchy_levels = switch_info->max_hierarchy_levels;
     sai_switch_info_ptr->max_supported_tc = switch_info->max_supported_tc;
     sai_switch_info_ptr->max_queues_per_port = switch_info->max_queues_per_port;
@@ -147,6 +121,8 @@ void sai_switch_info_initialize(sai_switch_id_t switch_id,
     sai_switch_info_ptr->cell_size = switch_info->cell_size;
     sai_switch_info_ptr->ing_max_buf_pools = switch_info->ing_max_buf_pools;
     sai_switch_info_ptr->egr_max_buf_pools = switch_info->egr_max_buf_pools;
+    sai_switch_info_ptr->tiles_per_buf_pool = switch_info->tiles_per_buf_pool;
+    sai_switch_info_ptr->max_tile_buffer_size = switch_info->max_tile_buffer_size;
 
     sai_switch_info_ptr->max_uc_queues_per_cpu_port =
         switch_info->max_uc_queues_per_cpu_port;
@@ -154,7 +130,8 @@ void sai_switch_info_initialize(sai_switch_id_t switch_id,
         switch_info->max_mc_queues_per_cpu_port;
 
     sai_switch_info_ptr->l2_table_size = switch_info->l2_table_size;
-    sai_switch_info_ptr->l3_table_size = switch_info->l3_table_size;
+    sai_switch_info_ptr->l3_host_table_size = switch_info->l3_host_table_size;
+    sai_switch_info_ptr->l3_route_table_size = switch_info->l3_route_table_size;
 
     sai_switch_info_ptr->max_mac_learn_limit = 0;
     sai_switch_info_ptr->fdb_aging_time = 0;
@@ -249,13 +226,14 @@ sai_status_t sai_switch_oper_status_get(sai_switch_oper_status_t *operstate)
 sai_status_t sai_switch_oper_status_set(sai_switch_oper_status_t operstate)
 {
     sai_switch_state_change_notification_fn temp_notification_fn = NULL;
+    sai_object_id_t switch_id =SAI_DEFAULT_SWITCH_ID;
 
     sai_switch_lock();
     temp_notification_fn = sai_switch_state_notf_fn;
     sai_switch_unlock();
 
     if(temp_notification_fn != NULL) {
-        temp_notification_fn(operstate);
+        temp_notification_fn(switch_id,operstate);
     }
 
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();

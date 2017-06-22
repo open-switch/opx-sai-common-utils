@@ -488,10 +488,10 @@ sai_port_application_info_t *sai_port_next_application_node_get (
  */
 static inline sai_port_capability_t sai_port_capb_from_break_mode(sai_port_breakout_mode_type_t mode)
 {
-    if(mode == SAI_PORT_BREAKOUT_MODE_2_LANE) {
+    if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE) {
         return SAI_PORT_CAP_BREAKOUT_MODE_2X;
 
-    } else if(mode == SAI_PORT_BREAKOUT_MODE_4_LANE) {
+    } else if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE) {
         return SAI_PORT_CAP_BREAKOUT_MODE_4X;
     }
 
@@ -507,13 +507,13 @@ static inline sai_port_capability_t sai_port_capb_from_break_mode(sai_port_break
 static inline sai_port_breakout_mode_type_t sai_port_break_mode_from_capb(sai_port_capability_t capb)
 {
     if(capb == SAI_PORT_CAP_BREAKOUT_MODE_2X) {
-        return SAI_PORT_BREAKOUT_MODE_2_LANE;
+        return SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE;
 
     } else if(capb == SAI_PORT_CAP_BREAKOUT_MODE_4X) {
-        return SAI_PORT_BREAKOUT_MODE_4_LANE;
+        return SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE;
     }
 
-    return SAI_PORT_BREAKOUT_MODE_1_LANE;
+    return SAI_PORT_BREAKOUT_MODE_TYPE_1_LANE;
 }
 
 /**
@@ -524,16 +524,53 @@ static inline sai_port_breakout_mode_type_t sai_port_break_mode_from_capb(sai_po
  */
 static inline sai_port_lane_count_t sai_port_breakout_lane_count_get(sai_port_breakout_mode_type_t mode)
 {
-    if(mode == SAI_PORT_BREAKOUT_MODE_4_LANE) {
+    if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE) {
         return SAI_PORT_LANE_COUNT_ONE;
 
-    } else if(mode == SAI_PORT_BREAKOUT_MODE_2_LANE) {
+    } else if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE) {
         return SAI_PORT_LANE_COUNT_TWO;
     }
 
     return SAI_PORT_LANE_COUNT_FOUR;
 }
 
+/**
+ * @brief Get the port count for a specific breakout mode
+ *
+ * @param[in] mode breakout mode type
+ * @return port lane count corresponding to the breakout mode
+ */
+static inline uint_t sai_port_breakout_port_count_get(sai_port_breakout_mode_type_t mode)
+{
+    if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE) {
+        return 4;
+
+    } else if(mode == SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE) {
+        return 2;
+    }
+
+    return 1;
+}
+
+static inline sai_port_breakout_mode_type_t sai_port_get_breakout_mode_from_port_count (uint_t count)
+{
+
+    switch (count) {
+        case 4:
+            return SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE;
+
+        case 2:
+            return SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE;
+
+        case 1:
+            return SAI_PORT_BREAKOUT_MODE_TYPE_1_LANE;
+
+        default:
+            return SAI_PORT_BREAKOUT_MODE_TYPE_MAX;
+    }
+    /* Wont reach here. For compilation and avoiding coverity issues*/
+    return SAI_PORT_BREAKOUT_MODE_TYPE_MAX;
+}
 /**
  * @brief Get the HW lane list for a given SAI logical port.
  * CPU port is not supported by thie API.
@@ -570,16 +607,13 @@ sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(sai_object_id_t
  * @brief Updates the port info before applying breakout mode
  *
  * @param[in] port_id  sai switch port number
- * @param[in] speed  port speed in Gbps
- * @param[in] new_mode  new breakout mode to be configured
- * @param[in] prev_mode  previous/current breakout mode
+ * @param[in] breakout_cfg Structure containing breakout config
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-sai_status_t sai_port_breakout_mode_update(sai_object_id_t port,
-                                           sai_port_speed_t speed,
-                                           sai_port_breakout_mode_type_t new_mode,
-                                           sai_port_breakout_mode_type_t prev_mode);
+sai_status_t sai_port_breakout_mode_update (sai_object_id_t port,
+                                            sai_port_breakout_config_t  *breakout_cfg);
+
 
 /**
  * @brief Get the list of  SAI logical port and it doesn't include CPU port
@@ -616,8 +650,66 @@ sai_status_t sai_port_attr_supported_speed_update(sai_object_id_t port,
  * @param[inout] port_attr_info Pointer to port attribute information
  */
 void sai_port_attr_info_defaults_init(sai_port_attr_info_t *port_attr_info);
+
+
+/**
+ * @brief Check whether a port is oper up
+ *
+ * @param[in] port_obj SAI Port object identifier
+   @return true if port is oper up. false otherwise
+ */
+bool sai_port_is_oper_up(sai_object_id_t port_obj);
 /**
  * \}
  */
+
+
+/**
+ * @brief Get port info from NPU Physical port id
+ *
+ * @param[in] phy_port_id NPU Physical port identifier
+ * @return Pointer to port info structure if found. NULL if not found
+ *
+ */
+sai_port_info_t *sai_port_info_get_from_npu_phy_port(sai_npu_port_id_t phy_port_id);
+
+
+/**
+ * @brief Mark whether port is valid or not
+ *
+ * @param[in] port_id SAI Port identifier
+ * @param[in] valid True if valid, false if not
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_validity_set (sai_object_id_t port, bool valid);
+
+
+/**
+ * @brief Update validity on create. Mark the create port as valid and rest as invalid
+ *        Other ports validity will be updated on their respective create
+ *
+ * @param[in] create_port The port used in create API
+ * @param[in] control_port The first port in the breakout mode
+ * @param[in] new_mode The new breakout mode applied
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port, sai_object_id_t control_port,
+                                                sai_port_breakout_mode_type_t new_mode);
+
+/**
+ * @brief Check whether if breakout mode is supported
+ *
+ * @param[in] port_id SAI Port identifier
+ * @param[in] breakout_mode Port breakout mode
+ * @return true if supported
+ *         false if not supported
+ *
+ */
+bool sai_port_is_breakout_mode_supported (sai_object_id_t port_id,
+                                          sai_port_breakout_mode_type_t breakout_mode);
 
 #endif /* __SAI_PORT_UTILS_H__ */

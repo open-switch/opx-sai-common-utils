@@ -234,6 +234,16 @@ static inline bool sai_qos_is_hierarchy_qos_supported (void)
 }
 
 /**
+ * @brief Utility to check hierarchy supported is flexibile to modify in switch.
+ *
+ * @return true if supported else false.
+ */
+static inline bool sai_qos_is_fixed_hierarchy_qos (void)
+{
+    return ((sai_switch_info_get()->hierarchy_fixed) ? true : false);
+}
+
+/**
  * @brief Get SAI QOS Port node.
  *
  * @param[in] port_id    port id
@@ -878,6 +888,35 @@ sai_status_t sai_qos_port_get_pg_list (sai_object_id_t port_id,
  *  error code is returned.
  */
 sai_status_t sai_qos_get_tc_from_pg (sai_object_id_t port_id, uint_t pg_id, uint_t *tc);
+
+/**
+ * @brief Validate whether the child sg can be attached to the parent
+ * @param[in] p_child_node Child scheduler group node
+ * @param[in] p_parent_node Parent scheduler group node
+ *
+ * @return SAI_STATUS_SUCCESS if validation is successful otherwise a different
+ *  error code is returned.
+ */
+sai_status_t sai_qos_sched_group_validate_child_parent(
+                                     dn_sai_qos_sched_group_t *p_child_node,
+                                     dn_sai_qos_sched_group_t *p_parent_node);
+
+/**
+ * @brief Validate whether the child queue can be attached to the parent
+ * @param[in] p_child_node Child queue node
+ * @param[in] p_parent_node Parent scheduler group node
+ *
+ * @return SAI_STATUS_SUCCESS if validation is successful otherwise a different
+ *  error code is returned.
+ */
+sai_status_t sai_qos_queue_validate_child_parent(
+                                     dn_sai_qos_queue_t *p_queue_node,
+                                     dn_sai_qos_sched_group_t *p_parent_node);
+
+sai_status_t sai_qos_sched_group_and_child_nodes_update (
+                                          sai_object_id_t sg_id,
+                                          sai_object_id_t child_id,
+                                          bool is_add);
 
 /** Logging utility for SAI POLICER API */
 #define SAI_POLICER_LOG(level, msg, ...) \

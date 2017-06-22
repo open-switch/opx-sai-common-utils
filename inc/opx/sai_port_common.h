@@ -117,7 +117,34 @@ typedef enum _sai_port_fwd_mode_t {
     /** L3 - Routing */
     SAI_PORT_FWD_MODE_ROUTING,
 } sai_port_fwd_mode_t;
+/**
+ * @brief Port Add/Delete Event
+ */
+typedef enum _sai_port_event_t
+{
+    /** Create a new active port */
+    SAI_PORT_EVENT_ADD,
 
+    /** Delete/Invalidate an existing port */
+    SAI_PORT_EVENT_DELETE,
+
+} sai_port_event_t;
+
+/**
+ * @brief Defines the port event notification
+ */
+typedef struct _sai_port_event_notification_t {
+
+    /** Port id */
+    sai_object_id_t port_id;
+
+    /** Port event */
+    sai_port_event_t port_event;
+
+} sai_port_event_notification_t;
+
+typedef void (*sai_port_event_notification_fn)(uint32_t count,
+                                    sai_port_event_notification_t *data);
 /**
  * @brief SAI port_event internal notification
  */
@@ -149,6 +176,8 @@ typedef struct _saI_port_event_internal_notf_t {
 #define SAI_DFLT_FDB_LEARNED_LIMIT_VIOL SAI_PACKET_ACTION_DROP
 #define SAI_DFLT_FLOW_CONTROL_MODE      SAI_PORT_FLOW_CONTROL_MODE_DISABLE
 #define SAI_DFLT_PFC_ENABLED_BITMAP     0
+#define SAI_DFLT_OUI_CODE               0x6A737D
+#define SAI_DFLT_FEC_MODE               SAI_PORT_FEC_MODE_NONE
 
 
 /**
@@ -156,6 +185,7 @@ typedef struct _saI_port_event_internal_notf_t {
  * @todo Remove it once active lane based bitmap is added
  */
 #define SAI_ONE_LANE_BITMAP  (0x1)
+#define SAI_TWO_LANE_BITMAP  (0x5)
 #define SAI_FOUR_LANE_BITMAP (0xF)
 
 /**
@@ -227,6 +257,12 @@ typedef struct _sai_port_attr_info_t
 
     /** PFC priorities enabled on the port */
     uint8_t                           pfc_enabled_bitmap;
+
+    /** FEC type enabled on the port */
+    sai_port_fec_mode_t               fec_mode;
+
+    /** OUI code for 25G/50G port */
+    sai_uint32_t                      oui_code;
 
 } sai_port_attr_info_t;
 
@@ -304,11 +340,14 @@ typedef enum _sai_port_capability_t
     /** 4 lanes break out/in mode */
     SAI_PORT_CAP_BREAKOUT_MODE_4X = (1 << 3),
 
-    /** Add new capabilities above this */
+    /** Add new capabilities above this. Increment SAI_PORT_MAX_BREAKOUT_MODE_CAP on adding */
     SAI_PORT_CAP_MAX = (1 << 4)
 } sai_port_capability_t;
 
-
+/* Increment this on adding new modes. This is macro does not include SAI_PORT_CAP_BREAKOUT_MODE
+ * itself and its just a count of breakout modes
+ */
+#define SAI_PORT_MAX_BREAKOUT_MODE_CAP 3
 /**
  * @brief Number of hardware lane in a physical port
  */
@@ -339,6 +378,24 @@ typedef struct _sai_port_application_info_t {
 
 } sai_port_application_info_t;
 
+/**
+ * @brief Structure to be used by APIs to configure breakout
+ */
+typedef struct _sai_port_breakout_config_t {
+
+    /** Current breakout mode */
+    sai_port_breakout_mode_type_t curr_mode;
+
+    /** New breakout mode */
+    sai_port_breakout_mode_type_t new_mode;
+
+    /** Current speed of the port */
+    sai_port_speed_t curr_speed;
+
+    /** New speed of the port after breakout */
+    sai_port_speed_t new_speed;
+
+} sai_port_breakout_config_t;
 /*
  * SAI Port Object Id (sai_npu_object_id_t) 48 bit encoding scheme
  -------------------------------------------------------------------------

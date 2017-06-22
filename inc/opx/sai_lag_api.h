@@ -154,21 +154,6 @@ std_dll_head* sai_lag_list_get(void);
 */
 sai_lag_node_t* sai_lag_node_get(sai_object_id_t lag_id);
 
-/** SAI LAG API - Get router interface ID associated with LAG ID
-    \param[in] lag_id LAG Identifier
-    \return Success: A Valid router interface Object ID
-            Failure: Zero
-*/
-sai_object_id_t sai_lag_get_rif_id (sai_object_id_t lag_id);
-
-/** SAI LAG API - Update Router interface ID for a LAG
-    \param[in] lag_id LAG Identifier
-    \param[in] rif_id Router Interface Identifier
-    \return Success: SAI_STATUS_SUCCESS
-            Failure: SAI_STATUS_ITEM_NOT_FOUND
-*/
-sai_status_t sai_lag_update_rif_id (sai_object_id_t lag_id, sai_object_id_t rif_id);
-
 /** SAI LAG API - Read num ports for a LAG from cache
       \param[in] lag_id LAG Identifier
       \param[out] port_count The number of ports in the LAG
@@ -259,6 +244,4 @@ sai_status_t sai_lag_member_get_member_id (sai_object_id_t  lag_id,
 sai_status_t sai_lag_member_set_member_id (sai_object_id_t lag_id,
                                            sai_object_id_t port_id,
                                            sai_object_id_t member_id);
-
-
 #endif

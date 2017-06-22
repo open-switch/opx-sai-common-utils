@@ -40,18 +40,33 @@
 #define VLAN_UNDEF (0)
 #define SAI_INIT_DEFAULT_VLAN 1
 #define SAI_DEF_VLAN_TAGGING_MODE SAI_VLAN_TAGGING_MODE_UNTAGGED
+#define SAI_INVALID_VLAN_MEMBER_ID 0
+/*VLAN member cache node: RB tree of VLAN members */
+typedef struct _sai_vlan_member_node_t {
+    /*vlan_member_id: VLAN member identifier*/
+    sai_object_id_t vlan_member_id;
+    /*switch_id: Switch identifier*/
+    sai_object_id_t switch_id;
+    /*vlan_id: VLAN identifier*/
+    sai_object_id_t vlan_id;
+    /*port_id: sai port identifier*/
+    sai_object_id_t port_id;
+    /*tagging_mode: VLAN tag mode*/
+    sai_vlan_tagging_mode_t tagging_mode;
+}sai_vlan_member_node_t;
+
 /*VLAN port node: A node in linked list*/
-typedef struct _sai_vlan_port_node_t{
+typedef struct _sai_vlan_member_dll_node_t{
     /*node: Linked list node*/
     std_dll node;
     /*vlan_port: Port and tagging mode*/
-    sai_vlan_port_t vlan_port;
-}sai_vlan_port_node_t;
+    sai_vlan_member_node_t *vlan_member_info;
+}sai_vlan_member_dll_node_t;
 
 /*VLAN Global cache node: List of ports in the vlan*/
 typedef struct _sai_vlan_global_cache_node_t{
     /*port_list: List of ports*/
-    std_dll_head port_list;
+    std_dll_head member_list;
     /*vlan_id: VLAN identifier*/
     sai_vlan_id_t vlan_id;
     /*port_cout: Number of ports in the VLAN*/

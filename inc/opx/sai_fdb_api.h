@@ -92,18 +92,12 @@ sai_fdb_entry_node_t *sai_add_fdb_entry_node_in_global_tree(
 
 /** SAI FDB API - Create and insert FDB entry Node to cache
       \param[in] fdb_entry FDB entry to be cached
-      \param[in] port_id Port on which FDB entry is learnt
-      \param[in] sai_fdb_entry_type_t Type of entry - static or dynamic
-      \param[in] sai_packet_action_t Action to be set Forward/Drop/Trap/Log
-      \param[in] metadata FDB Metadata
+      \param[in] fdb_entry_node_data Data to be cached for the FDB entry node
       \return Success: SAI_STATUS_SUCCESS
                     Failure: SAI_STATUS_FAILURE, SAI_STATUS_NO_MEMORY
 */
 sai_status_t sai_insert_fdb_entry_node(const sai_fdb_entry_t *fdb_entry,
-                                       sai_object_id_t port_id,
-                                       sai_fdb_entry_type_t entry_type,
-                                       sai_packet_action_t action,
-                                       uint_t metadata);
+                                       sai_fdb_entry_node_t *fdb_entry_node_data);
 
 /** SAI FDB API - Update existing FDB entry node
       \param[inout] fdb_entry FDB entry node to be updated
@@ -206,4 +200,53 @@ static inline sai_fdb_entry_type_t sai_get_sai_fdb_entry_type_for_flush(sai_fdb_
     return entry_type;
 }
 
+/** SAI FDB API - NPU FDB notification function
+      \param[in] num_notification Number of notifications
+      \param[in] data List of notifications data
+      \param[in] add_data List of additional data for processing
+*/
+typedef void (*sai_fdb_npu_event_notification_fn) (uint_t num_notification,
+                                                   sai_fdb_event_notification_data_t *data,
+                                                   sai_fdb_even_additional_data_t *add_data);
+
+/** SAI FDB API - Remove FDB entry node from cache
+      \param[in] fdb_entry_node Remove FDB entry node from cache
+      \param[in] delete_in_npu Delete in NPU if flush callback is registered
+      \param[in] validate_port If set to true, check if port in hardware and FDB cache are same. If they are not
+                 same return error
+      \return Success: SAI_STATUS_SUCCESS
+              Failure: Appropriate error code will be returned
+
+*/
+sai_status_t sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node,
+                                        bool delete_in_npu, bool validate_port);
+/* DEBUG ROUTINES */
+/** SAI FDB API - Dump all FDB entry nodes */
+void sai_dump_all_fdb_entry_nodes (void);
+
+/** SAI FDB API - Dump FDB entry count */
+void sai_dump_all_fdb_entry_count (void);
+
+/** SAI FDB API - Dump all FDB registered nodes by l3 module */
+void sai_dump_all_fdb_registered_nodes (void);
+
+/** SAI FDB API - Dump all FDB entry nodes per port
+      \param[in] port_id SAI Port object ID on which FDB entries to be dumped
+*/
+void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id);
+
+/** SAI FDB API - Dump all FDB entry nodes per vlan
+      \param[in] vlan_id VLAN ID on which FDB entries to be dumped
+*/
+void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id);
+
+/** SAI FDB API - Dump all FDB entry nodes port port vlan
+      \param[in] port_id SAI Port object ID on which FDB entries to be dumped
+      \param[in] vlan_id VLAN ID on which FDB entries to be dumped
+*/
+void sai_dump_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
+                                             sai_vlan_id_t vlan_id);
+
+/** SAI FDB API - Dump all pending FDB to L3 notification nodes */
+void sai_dump_pending_fdb_to_l3_notifs (void);
 #endif
