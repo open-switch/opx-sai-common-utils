@@ -7,4 +7,4 @@ This repository contains the common utilities used for the switch abstraction in
 
 See [Architecture](https://github.com/open-switch/opx-docs/wiki/Architecture) for more information on the SAI common utilities.
 
-(c) 2017 Dell EMC
+© 2017 Dell EMC
