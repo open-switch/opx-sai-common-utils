@@ -28,6 +28,7 @@
 #include "saiqueue.h"
 #include "saischeduler.h"
 #include "saibuffer.h"
+#include "saiwred.h"
 
 #include "std_type_defs.h"
 #include "std_llist.h"
@@ -108,6 +109,20 @@
  */
 #define SAI_POLICER_MAX_ACTION_COUNT (3)
 /**
+ * @brief WRED max buffer limit
+ */
+#define SAI_WRED_MAX_BUFFER_LIMIT       (0xFFFFFFFF)
+
+/**
+ * @brief WRED max drop probability
+ */
+#define SAI_WRED_MAX_DROP_PROBABILITY   (100)
+
+/**
+ * @brief WRED max weight
+ */
+#define SAI_WRED_MAX_WEIGHT             (15)
+/**
 \}
 */
 
@@ -179,6 +194,16 @@ typedef enum _dn_sai_qos_policer_type_t {
 
 } dn_sai_qos_policer_type_t;
 
+/**
+ * @brief List of WRED profile linking types.
+ *
+ */
+typedef enum _dn_sai_qos_wred_link_t {
+    DN_SAI_QOS_WRED_LINK_QUEUE,
+    DN_SAI_QOS_WRED_LINK_PORT,
+    DN_SAI_QOS_WRED_LINK_BUFFER_POOL,
+    DN_SAI_QOS_WRED_LINK_MAX,
+} dn_sai_qos_wred_link_t;
 /**
  *  @brief SAI Policer Key
  */
@@ -306,6 +331,8 @@ typedef struct _dn_sai_qos_wred_threshold_t {
     /** Drop probability */
     uint_t                drop_probability;
 
+    /** ECN Enable/Disable */
+    bool                  ecn_enable;
 } dn_sai_qos_wred_threshold_t;
 
 
@@ -336,14 +363,17 @@ typedef struct _dn_sai_qos_wred_t
     /** Weight for the wred profile. Independent of color. */
     uint_t                weight;
 
-    /** Enable/Disable ECN Marking. Independent of color. */
-    bool                  ecn_mark_enable;
+    /** ECN Marking mode */
+    sai_ecn_mark_mode_t   ecn_mark_mode;
+
+    /** Queue list head. Nodes of type dn_sai_qos_queue_t */
+    std_dll_head          queue_dll_head;
 
     /** Port list head. Nodes of type dn_sai_qos_port_t */
     std_dll_head          port_dll_head;
 
-    /** Queue list head. Nodes of type dn_sai_qos_queue_t */
-    std_dll_head          queue_dll_head;
+    /** Buffer Pool list head. Nodes of type dn_sai_qos_queue_t */
+    std_dll_head          buffer_pool_dll_head;
 
 } dn_sai_qos_wred_t;
 
@@ -538,7 +568,7 @@ typedef struct _dn_sai_qos_sched_group_t
 
 /**
  * @brief SAI QOS data structure for the port parameters
- * Contains the List of policers, maps, scheudler and wred assigned to port.
+ * Contains the List of policers, maps, scheduler and wred assigned to port.
  * And also it holds the information for port attributes
  */
 
@@ -558,8 +588,6 @@ typedef struct _dn_sai_qos_port_t
     /** Link to the Policer port list */
     std_dll                       policer_dll_glue[SAI_QOS_POLICER_TYPE_MAX];
 
-    /** Link to the WRED port list */
-    std_dll                       wred_dll_glue;
 
     /** Link to the Scheduler port list */
     std_dll                       scheduler_dll_glue;
@@ -570,8 +598,6 @@ typedef struct _dn_sai_qos_port_t
     /** Link to the buffer profile associated to the port */
     std_dll                       buffer_profile_dll_glue;
 
-    /** WRED profile id attached to port */
-    sai_object_id_t               wred_id;
 
     /** Scheduler profile id attached to port */
     sai_object_id_t               scheduler_id;
@@ -594,7 +620,35 @@ typedef struct _dn_sai_qos_port_t
 
     /** NPU specific abstracted information */
     void                         *p_npu_info;
+    /** Queue list head. Nodes of type dn_sai_qos_queue_t */
+    std_dll_head                  port_pool_dll_head;
 } dn_sai_qos_port_t;
+/**
+ * @brief SAI Port Pool data structure
+ */
+typedef struct _dn_sai_qos_port_pool_t {
+    /** Link to the WRED port pool list */
+    std_dll                         port_dll_glue;
+
+    /** Qos Port Pool SAI object Identifier */
+    sai_object_id_t                 port_pool_id;
+
+    /** Port SAI object Identifier */
+    sai_object_id_t                 port_id;
+
+    /** Qos Buffer profile Identifier */
+    sai_object_id_t                 pool_id;
+
+    /** WRED profile id attached to port pool */
+    sai_object_id_t                 wred_id;
+
+    /** Link to the WRED port pool list */
+    std_dll                         wred_dll_glue;
+
+    /** To indicate if WRED is not set in HW */
+    bool                            wred_sw_cached;
+
+} dn_sai_qos_port_pool_t;
 
 /**
  * @brief SAI QOS Buffer pool Key
@@ -639,6 +693,17 @@ typedef struct _dn_sai_qos_buffer_pool_t
 
     /** Place holder for NPU-specific data */
     void            *hw_info;
+    /** Shared heardroom Size of the buffer pool */
+    uint32_t                       xoff_size;
+
+    /** WRED profile id attached to queue */
+    sai_object_id_t         wred_id;
+
+    /** Link to the WRED queue list */
+    std_dll                 wred_dll_glue;
+
+    /** To indicate if WRED is not set in HW */
+    bool                    wred_sw_cached;
 
 } dn_sai_qos_buffer_pool_t;
 
@@ -703,6 +768,8 @@ typedef struct _dn_sai_qos_buffer_profile_t
 
     /** List of queues set with this buffer profile */
     std_dll_head                      queue_dll_head;
+    /** Place holder for NPU-specific data */
+    void                              *hw_info;
 
 } dn_sai_qos_buffer_profile_t;
 

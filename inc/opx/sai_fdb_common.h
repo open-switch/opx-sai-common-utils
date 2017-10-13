@@ -77,20 +77,23 @@ typedef struct _sai_fdb_registered_node_t {
     sai_fdb_event_t     fdb_event;
 } sai_fdb_registered_node_t;
 
-typedef struct _sai_fdb_notification_data_t {
+/** FDB Internal notification data: Data passed in notifications internal to other SAI modules*/
+typedef struct _sai_fdb_internal_notification_data_t {
     /*fdb_entry: FDB entry*/
     sai_fdb_entry_t     fdb_entry;
     /*port_id: Port on which FDB entry is learnt*/
     sai_object_id_t     port_id;
     /*fdb_event: FDB event associated with the data*/
     sai_fdb_event_t     fdb_event;
+} sai_fdb_internal_notification_data_t;
 
-} sai_fdb_notification_data_t;
-
-typedef struct _sai_fdb_even_additional_data_t {
+/** FDB event data: Data generated as part of a FDB event*/
+typedef struct _sai_fdb_event_data_t {
+    /* Data for notifying to registered modules */
+    sai_fdb_event_notification_data_t *notification_data;
     /* is_pending_entry: True if the entry is pending*/
     bool is_pending_entry;
-} sai_fdb_even_additional_data_t;
+} sai_fdb_event_data_t;
 
 typedef struct _sai_fdb_global_data_t {
     /*sai_global_fdb_tree: FDB entry global tree*/

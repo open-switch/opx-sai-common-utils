@@ -226,6 +226,11 @@ typedef struct _sai_acl_table_t {
 
     /** List of Fields */
     sai_acl_table_attr_t    *field_list;
+    /** Count of Actions in the Action List */
+    uint_t                  action_count;
+
+    /** List of Actions */
+    sai_acl_action_type_t    *action_list;
 
     /** Count of UDF Group Fields */
     uint_t                  udf_field_count;

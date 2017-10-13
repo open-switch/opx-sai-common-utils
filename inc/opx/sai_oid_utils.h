@@ -472,6 +472,62 @@ static inline bool sai_is_obj_id_stp_port(sai_object_id_t uoid)
     return (sai_uoid_obj_type_get(uoid) == SAI_OBJECT_TYPE_STP_PORT);
 }
 
+
+/**
+ * @brief Check if the SAI object id is Bridge object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if Hash object id else false is returned.
+ */
+static inline bool sai_is_obj_id_bridge (sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_BRIDGE);
+}
+
+/**
+ * @brief Check if the SAI object id is Bridge Port object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if Hash object id else false is returned.
+ */
+static inline bool sai_is_obj_id_bridge_port (sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_BRIDGE_PORT);
+}
+
+/**
+ * @brief Check if the SAI object id is L2MC Group object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if L2MC Group object id else false is returned.
+ */
+static inline bool sai_is_obj_id_l2mc_group(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_L2MC_GROUP);
+}
+
+/**
+ * @brief Check if the SAI object id is L2MC Member object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if L2MC Member object id else false is returned.
+ */
+static inline bool sai_is_obj_id_l2mc_member(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_L2MC_GROUP_MEMBER);
+}
+
+/**
+ * @brief Check if the SAI object id is Port Pool object id.
+ *
+ * @param[in] uoid SAI unified object id.
+ * @return true if Port Pool object id else false is returned.
+ */
+static inline bool sai_is_obj_id_port_pool(sai_object_id_t uoid)
+{
+    return (sai_uoid_obj_type_get (uoid) == SAI_OBJECT_TYPE_PORT_POOL);
+}
+
 /**
  * \}
  */

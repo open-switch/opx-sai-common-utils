@@ -451,3 +451,72 @@ sai_status_t sai_qos_buffer_pool_get_first_queue_id (sai_object_id_t pool_id,
     }
     return SAI_STATUS_FAILURE;
 }
+
+bool sai_qos_is_buffer_pool_xoff_size_configured (sai_object_id_t pool_id)
+{
+    dn_sai_qos_buffer_pool_t *p_buffer_pool_node = NULL;
+    p_buffer_pool_node = sai_qos_buffer_pool_node_get(pool_id);
+
+    if (p_buffer_pool_node != NULL) {
+        if (p_buffer_pool_node->xoff_size > 0)
+            return true;
+    }
+    return false;
+}
+
+uint_t sai_qos_buffer_profile_get_reserved_xoff_th_get (const dn_sai_qos_buffer_profile_t
+                                                      *p_qos_buffer_profile_node)
+{
+    dn_sai_qos_buffer_pool_t *p_buffer_pool_node = NULL;
+
+    STD_ASSERT (p_qos_buffer_profile_node != NULL);
+
+    if (p_qos_buffer_profile_node->buffer_pool_id != SAI_NULL_OBJECT_ID) {
+        p_buffer_pool_node =
+            sai_qos_buffer_pool_node_get(p_qos_buffer_profile_node->buffer_pool_id);
+
+        STD_ASSERT (p_buffer_pool_node != NULL);
+
+        if (p_buffer_pool_node->xoff_size > 0)
+            return 0;
+    }
+
+    return p_qos_buffer_profile_node->xoff_th;
+}
+
+sai_status_t sai_qos_buffer_pool_get_wred_queue_ids(sai_object_id_t pool_id,
+        sai_object_list_t *p_queue_list)
+{
+    dn_sai_qos_buffer_pool_t    *p_pool_node = NULL;
+    dn_sai_qos_buffer_profile_t *p_profile_node;
+    dn_sai_qos_queue_t          *p_queue_node;
+    uint_t                      num = 0;
+
+    p_pool_node = sai_qos_buffer_pool_node_get(pool_id);
+
+    if(p_pool_node == NULL) {
+        return SAI_STATUS_INVALID_OBJECT_ID;
+    }
+
+    for(p_profile_node = sai_qos_buffer_pool_get_first_buffer_profile(p_pool_node);
+            p_profile_node != NULL;
+            p_profile_node = sai_qos_buffer_pool_get_next_buffer_profile(p_pool_node, p_profile_node)) {
+        for(p_queue_node = sai_qos_buffer_profile_get_first_queue(p_profile_node);
+                p_queue_node != NULL;
+                p_queue_node = sai_qos_buffer_profile_get_next_queue(p_profile_node, p_queue_node)) {
+            if((sai_qos_is_queue_type_ucast(p_queue_node->queue_type)) &&
+                    (sai_is_obj_id_logical_port(p_queue_node->port_id))) {
+                p_queue_list->list[num] = p_queue_node->key.queue_id;
+                num++;
+
+                if(num == p_queue_list->count) {
+                    return SAI_STATUS_SUCCESS;
+                }
+            }
+        }
+    }
+
+    p_queue_list->count = num;
+
+    return SAI_STATUS_SUCCESS;
+}

@@ -139,26 +139,15 @@ sai_status_t sai_fdb_get_port_from_cache(const sai_fdb_entry_t *fdb_entry,
     *port_id = fdb_entry_node->port_id;
     return SAI_STATUS_SUCCESS;
 }
-sai_status_t sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node,
-                                        bool delete_in_npu, bool validate_port)
+void sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node)
 {
     sai_fdb_registered_node_t *fdb_registered_node = NULL;
     sai_fdb_entry_t fdb_entry;
-    sai_status_t sai_rc = SAI_STATUS_SUCCESS;
     STD_ASSERT(fdb_entry_node != NULL);
 
     fdb_entry.vlan_id = fdb_entry_node->fdb_key.vlan_id;
     memcpy(fdb_entry.mac_address, fdb_entry_node->fdb_key.mac_address, sizeof(sai_mac_t));
 
-    /* Delete entry from NPU if flag is set and we have callback registered from NPU for npu delete
-     * to sai-common-utils code
-     */
-    if((delete_in_npu) && (sai_npu_flush_fdb_entry != NULL)) {
-        sai_rc = sai_npu_flush_fdb_entry (&fdb_entry, validate_port);
-        if(sai_rc != SAI_STATUS_SUCCESS) {
-            return sai_rc;
-        }
-    }
 
     fdb_registered_node = sai_get_fdb_registered_node(&fdb_entry);
     if(fdb_registered_node != NULL) {
@@ -172,182 +161,27 @@ sai_status_t sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node,
     }
     std_radix_remove(sai_fdb_global_cache.sai_global_fdb_tree,&(fdb_entry_node->fdb_rt_head));
     free(fdb_entry_node);
-    return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t sai_delete_fdb_entry_node (const sai_fdb_entry_t *fdb_entry)
+sai_fdb_entry_node_t *sai_get_next_fdb_entry_node (sai_fdb_entry_key_t *fdb_key)
 {
-    sai_fdb_entry_node_t *fdb_entry_node = NULL;
-    char mac_str[SAI_MAC_STR_LEN] = {0};
-
-    STD_ASSERT(fdb_entry != NULL);
-
-    fdb_entry_node = sai_get_fdb_entry_node(fdb_entry);
-    if(fdb_entry_node == NULL) {
-        SAI_FDB_LOG_ERR("FDB Entry not found MAC:%s vlan:%d",
-                         std_mac_to_string(&(fdb_entry->mac_address), mac_str,
-                                           sizeof(mac_str)), fdb_entry->vlan_id);
-        return SAI_STATUS_ADDR_NOT_FOUND;
-    }
-    return sai_remove_fdb_entry_node(fdb_entry_node, true, false);
-}
-
-void sai_delete_all_fdb_entry_nodes (bool delete_all, sai_fdb_flush_entry_type_t flush_entry_type)
-{
-    sai_fdb_entry_node_t *fdb_entry_node = NULL;
-    sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
-    sai_status_t sai_rc = SAI_STATUS_SUCCESS;
-    char mac_str[SAI_MAC_STR_LEN] = {0};
-
-    memset(&fdb_key, 0, sizeof(fdb_key));
+    sai_fdb_entry_node_t *fdb_entry_node;
 
     fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
                                                         sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-
-    while(fdb_entry_node != NULL) {
-        memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
-               sizeof(sai_fdb_entry_key_t));
-        if ((delete_all == true) ||
-            (entry_type == fdb_entry_node->entry_type)) {
-            sai_rc = sai_remove_fdb_entry_node(fdb_entry_node, true , false);
-            if(sai_rc != SAI_STATUS_SUCCESS) {
-                SAI_FDB_LOG_TRACE("FDB Entry MAC:%s vlan:%d not removed. Error code %d",
-                                  std_mac_to_string((const sai_mac_t*)
-                                  &(fdb_entry_node->fdb_key.mac_address), mac_str,
-                                  sizeof(mac_str)), fdb_entry_node->fdb_key.vlan_id, sai_rc);
-            }
-        }
-        fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-    }
+                                                        (u_char *)fdb_key, SAI_FDB_ENTRY_KEY_SIZE);
+    return fdb_entry_node;
 }
 
 
-void sai_delete_fdb_entry_nodes_per_port (sai_object_id_t port_id, bool delete_all,
-                                          sai_fdb_flush_entry_type_t flush_entry_type)
+sai_fdb_registered_node_t *sai_get_next_fdb_registered_node (sai_fdb_entry_key_t *fdb_key)
 {
-    sai_fdb_entry_node_t *fdb_entry_node = NULL;
-    sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
-    sai_status_t sai_rc = SAI_STATUS_SUCCESS;
-    char mac_str[SAI_MAC_STR_LEN] = {0};
+    sai_fdb_registered_node_t *fdb_registered_node;
 
-    memset(&fdb_key, 0, sizeof(fdb_key));
-    fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-    while(fdb_entry_node != NULL) {
-        memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
-               sizeof(sai_fdb_entry_key_t));
-        if(fdb_entry_node->port_id == port_id){
-            if ((delete_all == true) ||
-                (entry_type == fdb_entry_node->entry_type)) {
-                sai_rc = sai_remove_fdb_entry_node(fdb_entry_node, true, true);
-                if(sai_rc != SAI_STATUS_SUCCESS) {
-                    SAI_FDB_LOG_WARN("FDB Entry MAC:%s vlan:%d not removed. Error code %d",
-                                     std_mac_to_string((const sai_mac_t*)
-                                     &(fdb_entry_node->fdb_key.mac_address), mac_str,
-                                     sizeof(mac_str)), fdb_entry_node->fdb_key.vlan_id, sai_rc);
-                }
-
-            }
-        }
-        fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-    }
-
-}
-
-void sai_delete_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id, bool delete_all,
-                                          sai_fdb_flush_entry_type_t flush_entry_type)
-{
-    sai_fdb_entry_node_t *fdb_entry_node = NULL;
-    sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
-    sai_status_t sai_rc = SAI_STATUS_SUCCESS;
-    char mac_str[SAI_MAC_STR_LEN] = {0};
-
-
-    memset(&fdb_key, 0, sizeof(fdb_key));
-    fdb_key.vlan_id = vlan_id;
-
-    fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-
-    while(fdb_entry_node != NULL) {
-        memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
-              sizeof(sai_fdb_entry_key_t));
-        if(fdb_key.vlan_id != vlan_id){
-            break;
-        }
-        if(delete_all == true || entry_type == fdb_entry_node->entry_type) {
-            sai_rc = sai_remove_fdb_entry_node(fdb_entry_node, true, false);
-            if(sai_rc != SAI_STATUS_SUCCESS) {
-                SAI_FDB_LOG_WARN("FDB Entry MAC:%s vlan:%d not removed. Error code %d",
-                                 std_mac_to_string((const sai_mac_t*)
-                                 &(fdb_entry_node->fdb_key.mac_address), mac_str,
-                                 sizeof(mac_str)), fdb_entry_node->fdb_key.vlan_id, sai_rc);
-            }
-        }
-        fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-    }
-}
-
-void sai_delete_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
-                                               sai_vlan_id_t vlan_id, bool delete_all,
-                                               sai_fdb_flush_entry_type_t flush_entry_type)
-{
-    sai_fdb_entry_node_t *fdb_entry_node = NULL;
-    sai_fdb_entry_key_t fdb_key;
-    sai_fdb_entry_type_t entry_type = sai_get_sai_fdb_entry_type_for_flush(flush_entry_type);
-
-    memset(&fdb_key, 0, sizeof(fdb_key));
-    fdb_key.vlan_id = vlan_id;
-    sai_status_t sai_rc = SAI_STATUS_SUCCESS;
-    char mac_str[SAI_MAC_STR_LEN] = {0};
-
-    fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-
-    while(fdb_entry_node != NULL) {
-        memcpy(&fdb_key,&(fdb_entry_node->fdb_key),
-               sizeof(sai_fdb_entry_key_t));
-        if(fdb_key.vlan_id != vlan_id){
-            break;
-        }
-        if ((fdb_entry_node->port_id == port_id)){
-            if ((delete_all == true) ||
-                (entry_type == fdb_entry_node->entry_type)) {
-                sai_rc = sai_remove_fdb_entry_node(fdb_entry_node, true, true);
-                if(sai_rc != SAI_STATUS_SUCCESS) {
-                    SAI_FDB_LOG_WARN("FDB Entry MAC:%s vlan:%d not removed. Error code %d",
-                                     std_mac_to_string((const sai_mac_t*)
-                                     &(fdb_entry_node->fdb_key.mac_address), mac_str,
-                                     sizeof(mac_str)), fdb_entry_node->fdb_key.vlan_id, sai_rc);
-                }
-
-            }
-        }
-        fdb_entry_node = (sai_fdb_entry_node_t *)std_radix_getnext(
-                                                        sai_fdb_global_cache.sai_global_fdb_tree,
-                                                        (u_char *)&fdb_key,
-                                                        SAI_FDB_ENTRY_KEY_SIZE);
-    }
+    fdb_registered_node = (sai_fdb_registered_node_t *)std_radix_getnext(
+                                                        sai_fdb_global_cache.sai_registered_fdb_entry_tree,
+                                                        (u_char *)fdb_key, SAI_FDB_ENTRY_KEY_SIZE);
+    return fdb_registered_node;
 }
 
 sai_fdb_entry_node_t *sai_add_fdb_entry_node_in_global_tree(sai_fdb_entry_node_t
@@ -451,7 +285,7 @@ int sai_fdb_notification_list_walk(std_radical_head_t *radical_head, va_list ap)
 {
    sai_fdb_registered_node_t *fdb_registered_node = (sai_fdb_registered_node_t *)radical_head;
    char                  mac_str[SAI_MAC_STR_LEN] = {0};
-   sai_fdb_notification_data_t *data = NULL;
+   sai_fdb_internal_notification_data_t *data = NULL;
 
    SAI_FDB_LOG_INFO ("FDB Node MAC:%s vlan:%d Event:%d port:0x%"PRIx64"\r\n",
                      std_mac_to_string((const sai_mac_t*)
@@ -459,7 +293,7 @@ int sai_fdb_notification_list_walk(std_radical_head_t *radical_head, va_list ap)
                      sizeof(mac_str)), fdb_registered_node->fdb_key.vlan_id,
                      fdb_registered_node->fdb_event, fdb_registered_node->port_id);
 
-   data = va_arg(ap,sai_fdb_notification_data_t *);
+   data = va_arg(ap,sai_fdb_internal_notification_data_t *);
 
    memcpy(data[sai_fdb_global_cache.cur_notification_idx].fdb_entry.mac_address,
           fdb_registered_node->fdb_key.mac_address, sizeof(sai_mac_t));
@@ -486,7 +320,7 @@ bool sai_fdb_is_notifications_pending (void)
 void sai_fdb_send_internal_notifications(void)
 {
     int ret;
-    sai_fdb_notification_data_t *data = NULL;
+    sai_fdb_internal_notification_data_t *data = NULL;
     uint_t num_notifications = 0;
 
     if(fdb_internal_callback == NULL) {
@@ -501,7 +335,7 @@ void sai_fdb_send_internal_notifications(void)
         } else {
             num_notifications = SAI_FDB_MAX_NOTIFICATION_NODES;
         }
-        data = calloc(num_notifications, sizeof(sai_fdb_notification_data_t));
+        data = calloc(num_notifications, sizeof(sai_fdb_internal_notification_data_t));
         if (data == NULL) {
             SAI_FDB_LOG_CRIT ("Error- No memory to allocate for walk");
             return;

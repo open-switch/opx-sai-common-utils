@@ -22,5 +22,10 @@ opx/sai_shell_npu.h opx/sai_vlan_api.h \
 opx/sai_hash_object.h  opx/sai_mirror_util.h  opx/sai_npu_vlan.h \
 opx/sai_stp_defs.h opx/sai_vlan_common.h \
 opx/sai_hostif_common.h opx/sai_npu_api_plugin.h \
-opx/sai_oid_utils.h opx/sai_stp_util.h
-
+opx/sai_oid_utils.h opx/sai_stp_util.h \
+opx/sai_bridge_api.h opx/sai_bridge_common.h \
+opx/sai_bridge_npu_api.h \
+opx/sai_l2mc_api.h opx/sai_l2mc_common.h \
+opx/sai_mcast_api.h opx/sai_mcast_common.h \
+opx/sai_npu_l2mc.h opx/sai_npu_mcast.h \
+opx/sai_qos_port_util.h

@@ -493,11 +493,15 @@ typedef sai_status_t (*sai_npu_scheduler_set_fn) (sai_object_id_t id,
  * @brief Create a QoS Wred in NPU.
  *
  * @param[in] p_wred Pointer to the wred node
- * @param[out] p_wred_id Pointer to the wred_id
+ * @param[in] attr_count Number of attributes
+ * @param[in] p_attr Pointer to the attribute list
+ * @param[out] p_wred_id Pointer to the wred_id created
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise
  * a different error code is returned.
  */
 typedef sai_status_t (*sai_npu_qos_wred_create_fn)(dn_sai_qos_wred_t *p_wred,
+                                                    uint_t attr_count,
+                                                    const sai_attribute_t *p_attr,
                                 sai_npu_object_id_t *p_wred_id);
 /**
  * @brief Remove a QoS Wred in NPU.
@@ -539,17 +543,30 @@ typedef sai_status_t (*sai_npu_qos_wred_attribute_get_fn)(dn_sai_qos_wred_t *p_w
 
 
 /**
- * @brief Set the wred id to a queue
+ * @brief Apply WRED profile based on the link type
  *
- * @param[in] queue_id queue object id on which wred is applied
- * @param[in] p_wred pointer to wred node
- * @param[in] wred_set indicates set or remove of wred
+ * @param[in] wred_link_id WRED link object ID to which WRED is applied
+ * @param[in] p_wred_node Pointer to WRED node
+ * @param[in] wred_link_type Level at which WRED is applied
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise
  * a different error code is returned.
  */
-typedef sai_status_t (*sai_npu_qos_queue_wred_set_fn)(sai_object_id_t queue_id,
+typedef sai_status_t (*sai_npu_qos_wred_link_set_fn)(
+        sai_object_id_t wred_link_id,
                                       dn_sai_qos_wred_t *p_wred,
-                                      bool wred_set);
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Remove applied WRED profile based on the link type
+ *
+ * @param[in] wred_link_id WRED link object ID to which WRED is applied
+ * @param[in] wred_link_type Level at which WRED is applied
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise
+ * a different error code is returned.
+ */
+typedef sai_status_t (*sai_npu_qos_wred_link_reset_fn)(
+        sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type);
 
 /**
  * @brief Function to determine whether the wred is hwobject or not
@@ -558,12 +575,6 @@ typedef sai_status_t (*sai_npu_qos_queue_wred_set_fn)(sai_object_id_t queue_id,
  */
 typedef bool (*sai_npu_qos_wred_is_hw_object_fn)(void);
 
-/**
- * @brief Function to determine whether the wred is supported on port level
- *
- * @return true if supported false otherwise
- */
-typedef bool (*sai_npu_qos_is_wred_on_port_supported)(void);
 /**
  * @brief Function to return maximum buffer size in NPU.
  *
@@ -646,6 +657,18 @@ typedef sai_status_t (*sai_npu_buffer_pool_attr_set_fn) (dn_sai_qos_buffer_pool_
                                                          const sai_attribute_t *attr);
 
 /**
+ *  @brief Get buffer pool attributes
+ *
+ * @param[in] p_buf_pool_node Buffer pool node
+ * @param[in] attr_count attribute count
+ * @param[out] attr_list attribute list to get
+ *
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_buffer_pool_attr_get_fn) (const dn_sai_qos_buffer_pool_t *p_buf_pool_node,
+                                                         uint32_t attr_count, sai_attribute_t *attr_list);
+/**
  *  @brief Get buffer pool stats
  *
  * @param[in] pool_id Buffer Pool ID
@@ -717,6 +740,20 @@ typedef sai_status_t (*sai_npu_buffer_profile_attr_set_fn) (sai_object_id_t obj_
 typedef sai_status_t (*sai_npu_apply_buffer_profile_fn) (sai_object_id_t obj_id,
                       dn_sai_qos_buffer_profile_t *p_old_buf_profile_node,
                       dn_sai_qos_buffer_profile_t *p_buf_profile_node, bool is_retry);
+
+/**
+ *  @brief Apply buffer profile on an object
+ *
+ * @param[in] buf_pool_id Buffer pool ID
+ * @param[in] p_buf_profile_node Buffer profile node
+ * @param[in] add_size Increase is reserved buffer size due to buffer profile modification
+ *
+ * @return SAI_STATUS_SUCCESS if operation is successful and buffer is available otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_check_buffer_size_fn) (sai_object_id_t buf_pool_id,
+                      const dn_sai_qos_buffer_profile_t *p_buf_profile_node,
+                      uint_t add_size);
 
 /**
  *  @brief Create ingress priority group
@@ -871,8 +908,8 @@ typedef struct _sai_npu_wred_api_t {
     sai_npu_qos_wred_remove_fn             wred_remove;
     sai_npu_qos_wred_attribute_set_fn      wred_attr_set;
     sai_npu_qos_wred_attribute_get_fn      wred_attr_get;
-    sai_npu_qos_queue_wred_set_fn          wred_on_queue_set;
-    sai_npu_qos_is_wred_on_port_supported  wred_on_port_supported;
+    sai_npu_qos_wred_link_set_fn           wred_link_set;
+    sai_npu_qos_wred_link_reset_fn         wred_link_reset;
     sai_npu_qos_wred_is_hw_object_fn       wred_is_hw_object;
     sai_npu_qos_wred_max_buf_size_get_fn   wred_max_buf_size_get;
     sai_npu_attribute_table_get_fn         attribute_table_get;
@@ -888,6 +925,7 @@ typedef struct _sai_npu_buffer_api_t {
     sai_npu_buffer_pool_create_fn            buffer_pool_create;
     sai_npu_buffer_pool_remove_fn            buffer_pool_remove;
     sai_npu_buffer_pool_attr_set_fn          buffer_pool_attr_set;
+    sai_npu_buffer_pool_attr_get_fn          buffer_pool_attr_get;
     sai_npu_buffer_pool_stats_get_fn         buffer_pool_stats_get;
     sai_npu_buffer_profile_create_fn         buffer_profile_create;
     sai_npu_buffer_profile_remove_fn         buffer_profile_remove;
@@ -900,6 +938,7 @@ typedef struct _sai_npu_buffer_api_t {
     sai_npu_buffer_pool_attr_table_get_fn    buffer_pool_attr_table_get;
     sai_npu_buffer_profile_attr_table_get_fn buffer_profile_attr_table_get;
 
+    sai_npu_check_buffer_size_fn             check_buffer_size;
 } sai_npu_buffer_api_t;
 
 /**

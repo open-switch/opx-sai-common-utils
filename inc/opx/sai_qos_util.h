@@ -820,24 +820,121 @@ t_std_error sai_qos_wred_node_insert(const dn_sai_qos_wred_t *p_wred_node);
 void sai_qos_wred_node_remove(sai_object_id_t wred_id);
 
 /**
- * @brief Utility to get the first queue node in the wred head. This is used for walking
- * the queue dll on which wred profile is applied.
+ * @brief Utility to get WRED link text given link type
  *
- * @param[in] p_wred_node pointer to wred node which has queue list
- * @return node of type dn_sai_qos_queue_t or NULL
+ * @param[in] wred_link_type Type of the WRED link
+ * @return Pointer to link text string or NULL
  */
-dn_sai_qos_queue_t *sai_qos_queue_node_from_wred_get(dn_sai_qos_wred_t *p_wred_node);
+const char *sai_qos_wred_link_str(dn_sai_qos_wred_link_t wred_link_type);
 
 /**
- * @brief Utility to get the next queue node in the wred head. This is used for walking
- * the queue dll on which wred profile is applied.
+ * @brief Utility to get WRED link ID given link node and type
  *
- * @param[in] p_wred_node pointer to wred node which has queue list
- * @param[in] p_queue_node pointer to current queue node to return next queue node
- * @return node of type dn_sai_qos_queue_t or NULL
+ * @param[in] p_wred_link_node Pointer to the WRED link node
+ * @param[in] wred_link_type Type of the WRED link
+ * @return Valid WRED link SAI object ID or SAI_NULL_OBJECT_ID
  */
-dn_sai_qos_queue_t *sai_qos_next_queue_node_from_wred_get(dn_sai_qos_wred_t *p_wred_node,
-                                                          dn_sai_qos_queue_t *p_queue_node);
+sai_object_id_t sai_qos_wred_link_oid_get(void *p_wred_link_node,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to WRED link dll head given WRED node and link type
+ *
+ * @param[in] p_wred_node Pointer to the WRED node
+ * @param[in] wred_link_type Type of the WRED link
+ * @return Pointer to valid dll head or NULL
+ */
+std_dll_head *sai_qos_wred_link_get_head_ptr(
+        dn_sai_qos_wred_t *p_wred_node,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to get the WRED ID given the WRED link ID and link type.
+ *
+ * @param[in] wred_link_id SAI object ID of the WRED link
+ * @param[in] wred_link_type Type of the WRED link
+ * @return Valid SAI WRED ID or SAI_NULL_OBJECT_ID
+ */
+sai_object_id_t sai_qos_wred_link_wred_id_get(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t dn_wred_link);
+
+/**
+ * @brief Utility to check if the WRED cache is marked or not for
+ * given WRED link ID and link type.
+ *
+ * @param[in] wred_link_id SAI object ID of the WRED link
+ * @param[in] wred_link_type Type of the WRED link
+ * @return true if marked; false otherwise
+ */
+bool sai_qos_wred_link_is_sw_cached(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to mark the cache for given WRED link ID and link type.
+ *
+ * @param[in] wred_link_id SAI object ID of the WRED link
+ * @param[in] wred_link_type Type of the WRED link
+ * @return SAI_STATUS_SUCCESS or appropriate SAI error
+ */
+sai_status_t sai_qos_wred_link_mark_sw_cache(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to unmark the cache for given WRED link ID and link type.
+ *
+ * @param[in] wred_link_id SAI object ID of the WRED link
+ * @param[in] wred_link_type Type of the WRED link
+ * @return SAI_STATUS_SUCCESS or appropriate SAI error
+ */
+sai_status_t sai_qos_wred_link_unmark_sw_cache(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to get the first link node based on the WRED link type.
+ * This is used for walking the WRED link types attached to this WRED profile.
+ *
+ * @param[in] p_wred_node Pointer to wred node which has WRED link list
+ * @param[in] wred_link_type Type of the WRED link
+ * @return void pointer to the link node or NULL
+ */
+void *sai_qos_wred_link_node_get_first(dn_sai_qos_wred_t *p_wred_node,
+        dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to get the next link node based on the WRED link type.
+ * This is used for walking the WRED link types attached to this WRED profile.
+ *
+ * @param[in] p_wred_node Pointer to wred node which has queue list
+ * @param[in] p_wred_link_node Pointer to current link node to return next link node
+ * @param[in] wred_link_type Type of the WRED link
+ * @return void pointer to the link node or NULL
+ */
+void *sai_qos_wred_link_node_get_next(dn_sai_qos_wred_t *p_wred_node,
+        void* p_wred_link_node, dn_sai_qos_wred_link_t wred_link_type);
+
+/**
+ * @brief Utility to insert the link glue node to WRED
+ * link list based on the WRED link type.
+ *
+ * @param[in] wred_id SAI WRED object ID
+ * @param[in] wred_link_id SAI WRED link object ID
+ * @param[in] dn_wred_link Type of the WRED link
+ * @return SAI_STATUS_SUCCESS or appropriate SAI error
+ */
+sai_status_t sai_qos_wred_link_insert(sai_object_id_t wred_id,
+        sai_object_id_t wred_link_id, dn_sai_qos_wred_link_t dn_wred_link);
+
+/**
+ * @brief Utility to remove the link glue node from WRED
+ * link list based on the WRED link type.
+ *
+ * @param[in] wred_id SAI WRED object ID
+ * @param[in] wred_link_id SAI WRED link object ID
+ * @param[in] dn_wred_link Type of the WRED link
+ * @return SAI_STATUS_SUCCESS or appropriate SAI error
+ */
+sai_status_t sai_qos_wred_link_remove(sai_object_id_t wred_id,
+        sai_object_id_t wred_link_id, dn_sai_qos_wred_link_t dn_wred_link);
 /**
  * @brief Utility to map the map port attr to map type.
  *

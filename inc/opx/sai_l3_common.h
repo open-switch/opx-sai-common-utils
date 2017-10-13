@@ -35,6 +35,7 @@
 #include "sainexthopgroup.h"
 #include "sairoute.h"
 #include "saiswitch.h"
+#include "saitunnel.h"
 
 /**
  * @brief SAI L3 data structure for the global parameters
@@ -171,6 +172,8 @@ typedef struct _sai_fib_nh_key_t {
 
     /** Next Hop Router Interface Id */
     sai_object_id_t             rif_id;
+    /** Valid when next hop type == SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP */
+    sai_tunnel_type_t           tunnel_type;
 
 } sai_fib_nh_key_t;
 

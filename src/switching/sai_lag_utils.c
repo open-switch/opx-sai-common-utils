@@ -96,6 +96,64 @@ sai_lag_node_t* sai_lag_node_get(sai_object_id_t lag_id)
     return NULL;
 }
 
+sai_status_t sai_lag_increment_ref_count(sai_object_id_t lag_id)
+{
+    sai_lag_node_t *lag_node = sai_lag_node_get(lag_id);
+
+    if(lag_node == NULL) {
+        return SAI_STATUS_FAILURE;
+    }
+    lag_node->ref_count++;
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_lag_decrement_ref_count(sai_object_id_t lag_id)
+{
+    sai_lag_node_t *lag_node = sai_lag_node_get(lag_id);
+
+    if((lag_node == NULL) ||(lag_node->ref_count == 0)) {
+        return SAI_STATUS_FAILURE;
+    }
+    lag_node->ref_count--;
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_lag_def_bridge_port_set(sai_object_id_t lag_id, sai_object_id_t bridge_port_id)
+{
+    sai_lag_node_t *lag_node = sai_lag_node_get(lag_id);
+
+    if(lag_node == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    lag_node->def_bridge_port_id = bridge_port_id;
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_lag_def_bridge_port_get(sai_object_id_t lag_id, sai_object_id_t *bridge_port_id)
+{
+    sai_lag_node_t *lag_node = sai_lag_node_get(lag_id);
+
+    if(lag_node == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    *bridge_port_id = lag_node->def_bridge_port_id;
+
+    return SAI_STATUS_SUCCESS;
+}
+
+bool sai_is_lag_in_use (sai_object_id_t lag_id)
+{
+    sai_lag_node_t *lag_node = sai_lag_node_get(lag_id);
+
+    if(lag_node == NULL) {
+        return false;
+    }
+    if(lag_node->ref_count > 0) {
+        return true;
+    }
+    return false;
+}
+
 sai_lag_node_t* sai_lag_get_first_node (void)
 {
     std_dll *node = NULL;

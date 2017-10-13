@@ -103,23 +103,14 @@ static inline bool sai_is_logical_port_valid(sai_object_id_t port)
     sai_port_info_t *port_info_table = sai_port_info_get(port);
 
     if(port_info_table == NULL) {
+        SAI_PORT_LOG_TRACE("Port info is %p in logical port valid for port 0x%"PRIx64"",
+                           port_info_table,port);
         return false;
     }
 
     return (port_info_table->port_valid);
 }
 
-sai_status_t sai_port_validity_set (sai_object_id_t port, bool valid)
-{
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-
-    if(port_info_table == NULL) {
-        return SAI_STATUS_ITEM_NOT_FOUND;
-    }
-    port_info_table->port_valid = valid;
-    return SAI_STATUS_SUCCESS;
-
-}
 bool sai_is_port_valid(sai_object_id_t port)
 {
     if(!(sai_is_obj_id_cpu_port(port) || sai_is_obj_id_logical_port(port))) {
@@ -137,29 +128,13 @@ bool sai_is_port_valid(sai_object_id_t port)
     return sai_is_logical_port_valid(port);
 }
 
-sai_status_t sai_port_phy_type_get(sai_object_id_t port, sai_port_phy_t *phy_type)
-{
-    STD_ASSERT(phy_type != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    *phy_type = port_info_table->phy_type;
-
-    return SAI_STATUS_SUCCESS;
-}
-
 sai_status_t sai_port_port_group_get(sai_object_id_t port, uint_t *port_group)
 {
-    STD_ASSERT(port_group != NULL);
+    if(port_group == NULL) {
+        SAI_PORT_LOG_TRACE("Port group is %p in port group get",port_group);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
 
     if(!sai_is_logical_port_valid(port)) {
         SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
@@ -176,40 +151,14 @@ sai_status_t sai_port_port_group_get(sai_object_id_t port, uint_t *port_group)
     return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t sai_port_ext_phy_addr_get(sai_object_id_t port,
-                                       sai_npu_port_id_t *ext_phy_addr)
-{
-    sai_port_phy_t phy_type;
-    STD_ASSERT(ext_phy_addr != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    if(sai_port_phy_type_get(port, &phy_type) != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Phy type get failed for port 0x%"PRIx64"", port);
-        return SAI_STATUS_FAILURE;
-    }
-
-    if(phy_type != SAI_PORT_PHY_INTERNAL) {
-        *ext_phy_addr = port_info_table->ext_phy_addr;
-        return SAI_STATUS_SUCCESS;
-    }
-
-    return SAI_STATUS_FAILURE;
-}
-
 sai_status_t sai_port_to_npu_local_port(sai_object_id_t port,
                                         sai_npu_port_id_t *local_port_id)
 {
-    STD_ASSERT(local_port_id != NULL);
+    if(local_port_id == NULL) {
+        SAI_PORT_LOG_TRACE("sai port to npu local port local_port_id is %p for port 0x%"PRIx64"",
+                           local_port_id, port);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     if(!(sai_is_obj_id_cpu_port(port) || sai_is_obj_id_logical_port(port))) {
         return SAI_STATUS_INVALID_OBJECT_ID;
@@ -233,7 +182,11 @@ sai_status_t sai_port_to_npu_local_port(sai_object_id_t port,
 sai_status_t sai_npu_local_port_to_sai_port(sai_npu_port_id_t local_port_id,
                                             sai_object_id_t *port)
 {
-    STD_ASSERT(port != NULL);
+    if(port == NULL) {
+        SAI_PORT_LOG_TRACE("Npu local port to sai port Port is %p local port id is %d",
+                           local_port_id, port);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     if(local_port_id == sai_switch_get_cpu_port()) {
         *port = sai_switch_cpu_port_obj_id_get();
@@ -261,271 +214,47 @@ sai_port_info_t *sai_port_info_get_from_npu_phy_port(sai_npu_port_id_t phy_port_
     return NULL;
 }
 
-/* Conversion should be possible even for in-active ports */
-sai_status_t sai_port_to_physical_port(sai_object_id_t port,
-                                       sai_npu_port_id_t *phy_port_id)
-{
-    STD_ASSERT(phy_port_id != NULL);
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    *phy_port_id = port_info_table->phy_port_id;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_max_lanes_get(sai_object_id_t port,
-                                    uint_t *max_lanes_per_port)
-{
-    STD_ASSERT(max_lanes_per_port != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    *max_lanes_per_port = port_info_table->max_lanes_per_port;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_lane_bmap_get(sai_object_id_t port,
-                                    uint64_t *port_lane_bmap)
-{
-    STD_ASSERT(port_lane_bmap != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    *port_lane_bmap = port_info_table->port_lane_bmap;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_lane_bmap_set(sai_object_id_t port,
-                                    uint64_t port_lane_bmap)
-{
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    port_info_table->port_lane_bmap = port_lane_bmap;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_speed_get(sai_object_id_t port, sai_port_speed_t *speed)
-{
-    STD_ASSERT(speed != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    *speed = port_info_table->port_speed;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_speed_set(sai_object_id_t port, sai_port_speed_t speed)
-{
-    if(speed > SAI_PORT_SPEED_MAX) {
-        SAI_PORT_LOG_ERR("Invalid speed %d for port 0x%"PRIx64"", speed, port);
-        return SAI_STATUS_INVALID_PARAMETER;
-    }
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    port_info_table->port_speed = speed;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_attr_supported_speed_update(sai_object_id_t port,
+sai_status_t sai_port_attr_supported_speed_update(sai_port_info_t *sai_port_info,
                                                   uint_t speed_capb)
 {
     uint_t lane = 0;
     uint_t max_lanes = 0;
-    sai_status_t ret_code = SAI_STATUS_FAILURE;
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
 
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
+    if(sai_port_info == NULL) {
+        SAI_PORT_LOG_TRACE("Port info is %p in port attr supported speed update ",sai_port_info);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    SAI_PORT_LOG_TRACE("Updating sai_port_info_t for control port 0x%"PRIx64" "
-                       "with speed capb %d", port, speed_capb);
-
-    ret_code = sai_port_max_lanes_get(port, &max_lanes);
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Max port lane get failed for port 0x%"PRIx64" "
-                         "with err %d", port, ret_code);
-        return ret_code;
-    }
+    max_lanes = sai_port_info->max_lanes_per_port;
 
     for (lane = 0; lane < max_lanes; lane++) {
-        if(port_info_table != NULL) {
-            port_info_table->port_speed_capb = speed_capb;
+        if(sai_port_info != NULL) {
+            sai_port_info->port_speed_capb = speed_capb;
         }
-        port_info_table = sai_port_info_getnext(port_info_table);
+        sai_port_info = sai_port_info_getnext(sai_port_info);
     }
     return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t sai_port_media_type_get(sai_object_id_t port,
-                                     sai_port_media_type_t *media_type)
+
+static inline void sai_port_capablility_enable_update(sai_port_info_t *sai_port_info,
+                                                      bool enable, uint64_t capb_val)
 {
-    STD_ASSERT(media_type != NULL);
-
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    *media_type = port_info_table->media_type;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t sai_port_media_type_set(sai_object_id_t port,
-                                     sai_port_media_type_t media_type)
-{
-    if(!sai_is_logical_port_valid(port)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-    port_info_table->media_type = media_type;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-/* Port Capabilities Enable/disable API's */
-/* API's related to port supported capabilities */
-sai_status_t sai_is_port_capb_supported(sai_object_id_t port,
-                                        uint64_t capb_mask, bool *value)
-{
-    STD_ASSERT(value != NULL);
-    *value = false;
-
-    sai_port_info_t *sai_port_info_ptr = sai_port_info_get(port);
-    if(sai_port_info_ptr == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    if(sai_port_info_ptr->port_supported_capb & capb_mask) {
-        *value = true;
-    }
-
-    return SAI_STATUS_SUCCESS;
-}
-
-void sai_port_supported_capability_set(sai_object_id_t port,
-                                       uint64_t capb_val)
-{
-
-    sai_port_info_t *sai_port_info_ptr = sai_port_info_get(port);
-    if(sai_port_info_ptr == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return;
-    }
-
-    sai_port_info_ptr->port_supported_capb |= capb_val;
-
-    SAI_PORT_LOG_INFO("Port capability val %d set for port 0x%"PRIx64"", capb_val, port);
-
-}
-
-/* API's related to enabled port Capabilities */
-sai_status_t sai_is_port_capb_enabled(sai_object_id_t port,
-                                      uint64_t capb_mask, bool *value)
-{
-    STD_ASSERT(value != NULL);
-    *value = false;
-
-
-    sai_port_info_t *sai_port_info_ptr = sai_port_info_get(port);
-    if(sai_port_info_ptr == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
-
-    if(sai_port_info_ptr->port_enabled_capb & capb_mask) {
-        *value = true;
-    }
-
-    return SAI_STATUS_SUCCESS;
-}
-
-void sai_port_capablility_enable(sai_object_id_t port, bool enable, uint64_t capb_val)
-{
-
-    sai_port_info_t *sai_port_info_ptr = sai_port_info_get(port);
-    if(sai_port_info_ptr == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
+    if(sai_port_info == NULL) {
+        SAI_PORT_LOG_TRACE("Port info is %p in port capb enable updadte",sai_port_info);
         return;
     }
 
     /* Enable only the supported capabilities */
-    capb_val = capb_val & (sai_port_info_ptr->port_supported_capb);
+    capb_val = capb_val & (sai_port_info->port_supported_capb);
 
     if(enable) {
-        sai_port_info_ptr->port_enabled_capb |= capb_val;
+        sai_port_info->port_enabled_capb |= capb_val;
 
     } else {
-        sai_port_info_ptr->port_enabled_capb &= ~capb_val;
+        sai_port_info->port_enabled_capb &= ~capb_val;
     }
 
-    SAI_PORT_LOG_INFO("Port capability val %d %s for port 0x%"PRIx64"",
-                       capb_val, (enable) ? "enable" : "disable", port);
 
 }
 
@@ -548,7 +277,10 @@ sai_status_t sai_port_set_forwarding_mode(sai_object_id_t port,
 sai_status_t sai_port_get_forwarding_mode(sai_object_id_t port,
                                           sai_port_fwd_mode_t *fwd_mode)
 {
-    STD_ASSERT(fwd_mode != NULL);
+    if(fwd_mode == NULL) {
+        SAI_PORT_LOG_TRACE("fwd_mode is %p in forwarding mode get",fwd_mode);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     sai_port_info_t *sai_port_info_ptr = sai_port_info_get(port);
     if(sai_port_info_ptr == NULL) {
@@ -566,7 +298,10 @@ sai_status_t sai_port_forward_mode_info(sai_object_id_t port,
                                         bool update)
 {
     sai_status_t ret_val = SAI_STATUS_FAILURE;
-    STD_ASSERT(fwd_mode != NULL);
+    if(fwd_mode == NULL) {
+        SAI_PORT_LOG_TRACE("fwd_mode is %p in forward mode info",fwd_mode);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
     sai_port_lock();
     if(update) {
         ret_val = sai_port_set_forwarding_mode(port,*fwd_mode);
@@ -640,7 +375,10 @@ sai_status_t sai_port_application_info_remove (sai_port_application_info_t *p_po
 {
     rbtree_handle               ports_applications_tree = NULL;
 
-    STD_ASSERT (p_port_node != NULL);
+    if(p_port_node == NULL) {
+        SAI_PORT_LOG_TRACE("p_port_node is %p in port app info remove",p_port_node);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
     ports_applications_tree = sai_switch_info_get()->port_applications_tree;
 
     if (ports_applications_tree == NULL) {
@@ -710,6 +448,9 @@ sai_port_application_info_t *sai_port_next_application_node_get (
                                               sai_port_application_info_t *p_port_node)
 {
     rbtree_handle port_applications_tree = sai_switch_info_get()->port_applications_tree;
+    if(p_port_node == NULL) {
+        return NULL;
+    }
 
     if (NULL == port_applications_tree)
         return NULL;
@@ -718,17 +459,16 @@ sai_port_application_info_t *sai_port_next_application_node_get (
 }
 
 /* Get the active breakout mode for a given port */
-sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(sai_object_id_t port)
+sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(const sai_port_info_t *port_info)
 {
-    bool mode_enabled = false;
-
-    sai_is_port_capb_enabled(port, SAI_PORT_CAP_BREAKOUT_MODE_2X, &mode_enabled);
-    if(mode_enabled) {
-        return sai_port_break_mode_from_capb(SAI_PORT_CAP_BREAKOUT_MODE_2X);
+    if(port_info == NULL) {
+        SAI_PORT_LOG_TRACE("port_info is %p in curr breakout mode get",port_info);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    sai_is_port_capb_enabled(port, SAI_PORT_CAP_BREAKOUT_MODE_4X, &mode_enabled);
-    if(mode_enabled) {
+    if(port_info->port_enabled_capb & SAI_PORT_CAP_BREAKOUT_MODE_2X) {
+        return sai_port_break_mode_from_capb(SAI_PORT_CAP_BREAKOUT_MODE_2X);
+    } else if(port_info->port_enabled_capb & SAI_PORT_CAP_BREAKOUT_MODE_4X) {
         return sai_port_break_mode_from_capb(SAI_PORT_CAP_BREAKOUT_MODE_4X);
     }
 
@@ -738,10 +478,10 @@ sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(sai_object_id_t
 }
 
 /* Note: port validation is expected to be done before invoking this call */
-static sai_status_t sai_port_break_mode_list(sai_object_id_t port, sai_s32_list_t *mode_list)
+static sai_status_t sai_port_break_mode_list_get(const sai_port_info_t *sai_port_info,
+                                                 sai_s32_list_t *mode_list)
 {
     uint32_t count = 0;
-    bool mode_supported = false;
     sai_port_capability_t avail_capb[SAI_PORT_MAX_BREAKOUT_MODE_CAP] =
                                                  {SAI_PORT_CAP_BREAKOUT_MODE_1X,
                                                   SAI_PORT_CAP_BREAKOUT_MODE_2X,
@@ -749,12 +489,15 @@ static sai_status_t sai_port_break_mode_list(sai_object_id_t port, sai_s32_list_
     uint_t mode_idx = 0;
 
 
-    STD_ASSERT(mode_list != NULL);
+    if((sai_port_info == NULL) || (mode_list == NULL)) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p mode_list is %p in breakout mode list get",
+                           sai_port_info, mode_list);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
 
     for(mode_idx = 0; mode_idx < SAI_PORT_MAX_BREAKOUT_MODE_CAP; mode_idx++) {
-        sai_is_port_capb_supported(port, avail_capb[mode_idx], &mode_supported);
-        if(mode_supported) {
+        if(sai_is_port_capb_supported (sai_port_info, avail_capb[mode_idx])) {
             if(count >= mode_list->count) {
                 return SAI_STATUS_BUFFER_OVERFLOW;
             }
@@ -766,20 +509,24 @@ static sai_status_t sai_port_break_mode_list(sai_object_id_t port, sai_s32_list_
 }
 
 sai_status_t sai_port_attr_supported_breakout_mode_get(sai_object_id_t port_id,
+                                                       const sai_port_info_t *sai_port_info,
                                                        sai_attribute_value_t *value)
 {
     sai_status_t sai_rc = SAI_STATUS_FAILURE;
     sai_s32_list_t mode_list;
     int32_t breakout_list[SAI_PORT_MAX_BREAKOUT_MODE_CAP] = {0};
 
-    STD_ASSERT(value != NULL);
-    STD_ASSERT(value->s32list.list != NULL);
+    if((sai_port_info == NULL) || (value == NULL) || (value->s32list.list == NULL)) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p value is %p value->s32list.list is %p in supported "
+                           "breakout mode get", sai_port_info, value, value->s32list.list);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     mode_list.list = breakout_list;
 
     mode_list.count = SAI_PORT_MAX_BREAKOUT_MODE_CAP;
 
-    sai_rc = sai_port_break_mode_list (port_id, &mode_list);
+    sai_rc = sai_port_break_mode_list_get (sai_port_info, &mode_list);
 
     if (sai_rc != SAI_STATUS_SUCCESS) {
         SAI_PORT_LOG_ERR("Error in fetching the current number of breakout modes");
@@ -807,18 +554,22 @@ sai_status_t sai_port_attr_supported_breakout_mode_get(sai_object_id_t port_id,
     return SAI_STATUS_SUCCESS;
 }
 
-bool sai_port_is_breakout_mode_supported (sai_object_id_t port_id,
+bool sai_port_is_breakout_mode_supported (const sai_port_info_t *sai_port_info,
                                           sai_port_breakout_mode_type_t breakout_mode)
 {
     sai_s32_list_t mode_list;
     int32_t breakout_list[SAI_PORT_MAX_BREAKOUT_MODE_CAP] = {0};
     uint_t mode_idx = 0;
     sai_status_t sai_rc = SAI_STATUS_FAILURE;
+    if(sai_port_info == NULL) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p in is breakout mode supported", sai_port_info);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     mode_list.count = SAI_PORT_MAX_BREAKOUT_MODE_CAP;
     mode_list.list = breakout_list;
 
-    sai_rc = sai_port_break_mode_list (port_id, &mode_list);
+    sai_rc = sai_port_break_mode_list_get (sai_port_info, &mode_list);
 
     if(sai_rc != SAI_STATUS_SUCCESS) {
         SAI_PORT_LOG_ERR("Error in fetching the current number of breakout modes");
@@ -833,27 +584,22 @@ bool sai_port_is_breakout_mode_supported (sai_object_id_t port_id,
 
     return false;
 }
-static sai_status_t sai_port_hw_lane_list_get(sai_object_id_t port, uint32_t lane_count,
-                                              uint32_t *lane_list)
+static sai_status_t sai_port_hw_lane_list_get(const sai_port_info_t *sai_port_info,
+                                              uint32_t lane_count, uint32_t *lane_list)
 {
-    uint_t cur_lane = 0, count = 0, serdes_port = 0;
-    sai_status_t ret_code = SAI_STATUS_FAILURE;
+    uint_t           cur_lane = 0;
+    uint_t           count = 0;
+    uint_t           serdes_port = 0;
     bool breakout_supported = false;
+    sai_port_info_t *tmp_port_info = NULL;
 
-    STD_ASSERT(lane_list != NULL);
-
-    sai_port_info_t *port_info = sai_port_info_get(port);
-    if(port_info == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
+    if((sai_port_info == NULL) || (lane_list == NULL)) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p lane_list is %p hw lane list get",
+                           sai_port_info, lane_list);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    ret_code = sai_port_to_physical_port(port, &serdes_port);
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Phy port id get failed for port 0x%"PRIx64" with err %d",
-                         port, ret_code);
-        return ret_code;
-    }
+    serdes_port = sai_port_info->phy_port_id;
 
     lane_list[count] = serdes_port;
     count++;
@@ -862,27 +608,18 @@ static sai_status_t sai_port_hw_lane_list_get(sai_object_id_t port, uint32_t lan
      * hardware lane list. Also, currently for non-breakout ports,
      * physical id's of all lanes are not stored */
 
-    ret_code = sai_is_port_capb_supported(port, SAI_PORT_CAP_BREAKOUT_MODE, &breakout_supported);
-
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Breakout capability get failed for port 0x%"PRIx64" with err %d",
-                         port, ret_code);
-        return ret_code;
-    }
+    tmp_port_info = sai_port_info_get(sai_port_info->sai_port_id);
+    breakout_supported = sai_is_port_capb_supported(sai_port_info, SAI_PORT_CAP_BREAKOUT_MODE);
 
     for (cur_lane = 1; cur_lane < lane_count; cur_lane++) {
         if(breakout_supported) {
-            port_info = sai_port_info_getnext(port_info);
-            if(port_info == NULL) {
-                SAI_PORT_LOG_ERR ("Port 0x%"PRIx64" is not a valid logical port", port);
+            tmp_port_info = sai_port_info_getnext(tmp_port_info);
+            if(tmp_port_info == NULL) {
+                SAI_PORT_LOG_ERR ("Port 0x%"PRIx64" does not have valid lane at index %d",
+                                  sai_port_info->sai_port_id, cur_lane);
                 return SAI_STATUS_INVALID_OBJECT_ID;
             }
-            ret_code = sai_port_to_physical_port(port_info->sai_port_id, &serdes_port);
-            if(ret_code != SAI_STATUS_SUCCESS) {
-                SAI_PORT_LOG_ERR ("Phy port id get failed for port 0x%"PRIx64" with err %d",
-                                  port, ret_code);
-                return ret_code;
-            }
+            serdes_port = tmp_port_info->phy_port_id;
             lane_list[count] = serdes_port;
         } else {
             lane_list[count] = ++serdes_port;
@@ -891,28 +628,34 @@ static sai_status_t sai_port_hw_lane_list_get(sai_object_id_t port, uint32_t lan
 
     }
 
-    return ret_code;
+    return SAI_STATUS_SUCCESS;
 }
 
 /* Get the HW lane list for a given SAI valid Logical port and CPU port is not supported */
 sai_status_t sai_port_attr_hw_lane_list_get(sai_object_id_t port_id,
+                                            const sai_port_info_t *sai_port_info,
                                             sai_attribute_value_t *value)
 {
-    uint32_t *lane_list = NULL, lane_count = 0;
+    uint32_t                      *lane_list = NULL;
+    uint_t                         lane_count = 0;
     sai_status_t ret_code = SAI_STATUS_FAILURE;
+    sai_port_breakout_mode_type_t  brkout_mode;
 
-    STD_ASSERT(value != NULL);
-    STD_ASSERT(value->u32list.list != NULL);
-
-    ret_code = sai_port_max_lanes_get(port_id, &lane_count);
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_SWITCH_LOG_ERR("Max port lane get failed for port 0x%"PRIx64" with err %d",
-                           port_id, ret_code);
-        return ret_code;
+    if((sai_port_info == NULL) || (value == NULL) || (value->u32list.list == NULL)) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p value is %p value->s32list.list is %p",
+                           " in port attr hw lane list get for port 0x%"PRIx64"",port_id,
+                           sai_port_info, value, value->s32list.list);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
+    lane_count = sai_port_info->max_lanes_per_port;
 
     if(lane_count == 0) { /* Not likely */
         return SAI_STATUS_FAILURE;
+    }
+
+    if(sai_port_is_breakout_enabled(sai_port_info)) {
+       brkout_mode = sai_port_current_breakout_mode_get (sai_port_info);
+       lane_count = sai_port_breakout_lane_count_get (brkout_mode);
     }
 
     if(value->u32list.count < lane_count) {
@@ -932,7 +675,7 @@ sai_status_t sai_port_attr_hw_lane_list_get(sai_object_id_t port_id,
     }
 
     do {
-        ret_code = sai_port_hw_lane_list_get(port_id, lane_count, lane_list);
+        ret_code = sai_port_hw_lane_list_get(sai_port_info, lane_count, lane_list);
         if(ret_code != SAI_STATUS_SUCCESS) {
             SAI_PORT_LOG_ERR("Port hw lane list get port 0x%"PRIx64" ret %d",
                              port_id, ret_code);
@@ -954,163 +697,161 @@ sai_status_t sai_port_attr_hw_lane_list_get(sai_object_id_t port_id,
     return ret_code;
 }
 
-sai_status_t sai_port_breakout_mode_update (sai_object_id_t port,
+sai_status_t sai_port_breakout_mode_update (sai_port_info_t *sai_port_info,
                                             sai_port_breakout_config_t  *breakout_cfg)
 {
 
-    uint_t lane = 0, max_lanes = 0, cap_val =0;
-    sai_status_t ret_code = SAI_STATUS_FAILURE;
+    uint_t                lane = 0;
+    uint_t                max_lanes = 0;
+    uint_t                cap_val =0;
     sai_port_media_type_t media_type = SAI_PORT_MEDIA_TYPE_NOT_PRESENT;
     uint_t prev_cap_val = 0;
-    sai_port_info_t *port_info_table = sai_port_info_get(port);
+    sai_object_id_t       sai_port_id = SAI_NULL_OBJECT_ID;
 
-    STD_ASSERT(breakout_cfg != NULL);
+    if((sai_port_info == NULL) || (breakout_cfg == NULL)) {
+        SAI_PORT_LOG_TRACE("sai_port_info is %p breakout_cfg is %p in breakout mode update",
+                           sai_port_info, breakout_cfg);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+    sai_port_id = sai_port_info->sai_port_id;
 
     prev_cap_val = sai_port_capb_from_break_mode(breakout_cfg->curr_mode);
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
-    }
 
     SAI_PORT_LOG_TRACE("Updating sai_port_info_t for control port 0x%"PRIx64" "
-                       "with breakout mode %d", port, breakout_cfg->new_mode);
+                       "with breakout mode %d", sai_port_id, breakout_cfg->new_mode);
 
-    ret_code = sai_port_max_lanes_get(port, &max_lanes);
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Max port lane get failed for port 0x%"PRIx64" "
-                         "with err %d", port, ret_code);
-        return ret_code;
-    }
+    max_lanes =sai_port_info->max_lanes_per_port;
 
     /* @todo handle SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE */
     if(breakout_cfg->new_mode == SAI_PORT_BREAKOUT_MODE_TYPE_1_LANE) { /* Single lane mode */
 
         /* Update control port's speed, lane bitmap and port capabilities */
-        port_info_table->port_speed = breakout_cfg->new_speed;
-        port_info_table->port_attr_info.speed = breakout_cfg->new_speed;
+        sai_port_info->port_speed = breakout_cfg->new_speed;
+        sai_port_info->port_attr_info.speed = breakout_cfg->new_speed;
 
         /* @todo lane bitmap should be based on max_lanes */
-        port_info_table->port_lane_bmap = SAI_FOUR_LANE_BITMAP;
+        sai_port_info->port_lane_bmap = SAI_FOUR_LANE_BITMAP;
 
         cap_val = (SAI_PORT_CAP_BREAKOUT_MODE | prev_cap_val);
-        sai_port_capablility_enable(port, false, cap_val);
-        sai_port_capablility_enable(port, true, SAI_PORT_CAP_BREAKOUT_MODE_1X);
+        sai_port_capablility_enable_update(sai_port_info, false, cap_val);
+        sai_port_capablility_enable_update(sai_port_info, true, SAI_PORT_CAP_BREAKOUT_MODE_1X);
 
         /* Disable the subsidiary ports and set appropriate capability flags */
         for (lane = 1; lane < max_lanes; lane++) {
-            port_info_table = sai_port_info_getnext(port_info_table);
-            sai_port_capablility_enable(port_info_table->sai_port_id, false, cap_val);
-            sai_port_capablility_enable(port_info_table->sai_port_id,
-                                        true, SAI_PORT_CAP_BREAKOUT_MODE_1X);
-
-            port_info_table->port_valid = false;
-            port_info_table->media_type = media_type;
+            sai_port_info = sai_port_info_getnext(sai_port_info);
+            sai_port_capablility_enable_update(sai_port_info, false, cap_val);
+            sai_port_capablility_enable_update(sai_port_info, true, SAI_PORT_CAP_BREAKOUT_MODE_1X);
+            sai_port_info->port_valid = false;
+            sai_port_info->media_type = media_type;
         }
     } else if(breakout_cfg->new_mode == SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE) { /* 4 lane Mode */
 
         /* Update control port's speed, lane bitmap and port capabilities */
-        port_info_table->port_lane_bmap = SAI_ONE_LANE_BITMAP;
-        port_info_table->port_speed = breakout_cfg->new_speed;
-        port_info_table->port_attr_info.speed = breakout_cfg->new_speed;
+        sai_port_info->port_lane_bmap = SAI_ONE_LANE_BITMAP;
+        sai_port_info->port_speed = breakout_cfg->new_speed;
+        sai_port_info->port_attr_info.speed = breakout_cfg->new_speed;
 
-        sai_port_capablility_enable(port, false, prev_cap_val);
+        sai_port_capablility_enable_update(sai_port_info, false, prev_cap_val);
         cap_val = (SAI_PORT_CAP_BREAKOUT_MODE | SAI_PORT_CAP_BREAKOUT_MODE_4X);
-        sai_port_capablility_enable(port, true, cap_val);
-        media_type = port_info_table->media_type;
+        sai_port_capablility_enable_update(sai_port_info, true, cap_val);
+        media_type = sai_port_info->media_type;
 
         /* Update the subsidiary ports with speed, media type, capabilities */
         for (lane = 1; lane < max_lanes; lane++) {
-            port_info_table = sai_port_info_getnext(port_info_table);
+            sai_port_info = sai_port_info_getnext(sai_port_info);
 
             /* Set the port_valid bit and appropriate port speed */
-            port_info_table->port_valid = true;
-            port_info_table->port_speed = breakout_cfg->new_speed;
-            port_info_table->port_attr_info.speed = breakout_cfg->new_speed;
+            sai_port_info->port_valid = true;
+            sai_port_info->port_speed = breakout_cfg->new_speed;
+            sai_port_info->port_attr_info.speed = breakout_cfg->new_speed;
 
             /* update with control port's media type
              * @todo remove this as it should be set from adapter host */
-            port_info_table->media_type = media_type;
+            sai_port_info->media_type = media_type;
 
             /* Clear the previous capability and enable the new port capability */
-            sai_port_capablility_enable(port_info_table->sai_port_id, false, prev_cap_val);
-            sai_port_capablility_enable(port_info_table->sai_port_id, true, cap_val);
+            sai_port_capablility_enable_update(sai_port_info, false, prev_cap_val);
+            sai_port_capablility_enable_update(sai_port_info, true, cap_val);
         }
     } else if(breakout_cfg->new_mode == SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE) { /* 2 lane mode */
 
         /* Update control port's speed, lane bitmap and port capabilities */
-        port_info_table->port_lane_bmap = SAI_TWO_LANE_BITMAP;
-        port_info_table->port_speed = breakout_cfg->new_speed;
-        port_info_table->port_attr_info.speed = breakout_cfg->new_speed;
+        sai_port_info->port_lane_bmap = SAI_TWO_LANE_BITMAP;
+        sai_port_info->port_speed = breakout_cfg->new_speed;
+        sai_port_info->port_attr_info.speed = breakout_cfg->new_speed;
 
-        sai_port_capablility_enable(port, false, prev_cap_val);
+        sai_port_capablility_enable_update(sai_port_info, false, prev_cap_val);
         cap_val = (SAI_PORT_CAP_BREAKOUT_MODE | SAI_PORT_CAP_BREAKOUT_MODE_2X);
-        sai_port_capablility_enable(port, true, cap_val);
-        media_type = port_info_table->media_type;
+        sai_port_capablility_enable_update(sai_port_info, true, cap_val);
+        media_type = sai_port_info->media_type;
 
         /* Update the subsidiary ports with speed, media type, capabilities */
         for (lane = 1; lane < max_lanes; lane++) {
-            port_info_table = sai_port_info_getnext(port_info_table);
+            sai_port_info = sai_port_info_getnext(sai_port_info);
             if(lane == 2) {
                 /* Set the port_valid bit and appropriate port speed */
-                port_info_table->port_valid = true;
-                port_info_table->port_speed = breakout_cfg->new_speed;
-                port_info_table->port_attr_info.speed = breakout_cfg->new_speed;
+                sai_port_info->port_valid = true;
+                sai_port_info->port_speed = breakout_cfg->new_speed;
+                sai_port_info->port_attr_info.speed = breakout_cfg->new_speed;
             } else {
-                port_info_table->port_valid = false;
+                sai_port_info->port_valid = false;
             }
             /* update with control port's media type*/
-            port_info_table->media_type = media_type;
+            sai_port_info->media_type = media_type;
             /* Clear the previous capability and enable the new port capability */
-            sai_port_capablility_enable(port_info_table->sai_port_id, false, prev_cap_val);
-            sai_port_capablility_enable(port_info_table->sai_port_id, true, cap_val);
+            sai_port_capablility_enable_update(sai_port_info, false, prev_cap_val);
+            sai_port_capablility_enable_update(sai_port_info, true, cap_val);
 
         }
     }
 
-    return ret_code;
+    return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port, sai_object_id_t control_port,
+sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port,
+                                                sai_port_info_t *sai_control_port_info,
                                                 sai_port_breakout_mode_type_t new_mode)
 {
     uint_t lane = 0;
     uint_t max_lanes = 0;
     sai_status_t ret_code = SAI_STATUS_FAILURE;
-    sai_port_info_t *port_info_table = sai_port_info_get(control_port);
+    sai_port_info_t *sai_port_info = sai_control_port_info;
 
-    if(port_info_table == NULL) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not a valid logical port", control_port);
-        return SAI_STATUS_INVALID_OBJECT_ID;
+    if(sai_control_port_info == NULL) {
+        SAI_PORT_LOG_TRACE("sai_control_port_info is %p for create port 0x%"PRIx64""
+                           "in update validity on create",sai_control_port_info, create_port);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    ret_code = sai_port_max_lanes_get(control_port, &max_lanes);
-    if(ret_code != SAI_STATUS_SUCCESS) {
-        SAI_PORT_LOG_ERR("Max port lane get failed for port 0x%"PRIx64" "
-                "with err %d", control_port, ret_code);
-        return ret_code;
-    }
+    max_lanes = sai_control_port_info->max_lanes_per_port;
 
     /* @todo handle SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE */
     if(new_mode == SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE) { /* 4 lane Mode */
 
         for (lane = 0; lane < max_lanes; lane++) {
-            if (create_port == port_info_table->sai_port_id) {
-                port_info_table->port_valid = true;
-            } else {
-                port_info_table->port_valid = false;
+            if(sai_port_info == NULL) {
+                return SAI_STATUS_FAILURE;
             }
-            port_info_table = sai_port_info_getnext(port_info_table);
+            if (create_port == sai_port_info->sai_port_id) {
+                sai_port_info->port_valid = true;
+            } else {
+                sai_port_info->port_valid = false;
+            }
+            sai_port_info = sai_port_info_getnext(sai_port_info);
         }
     } else if (new_mode == SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE) {
         for (lane = 0; lane < max_lanes; lane++) {
+            if(sai_port_info == NULL) {
+                return SAI_STATUS_FAILURE;
+            }
             if(lane ==0 || lane == 2){
-                if (create_port == port_info_table->sai_port_id) {
-                    port_info_table->port_valid = true;
+                if (create_port == sai_port_info->sai_port_id) {
+                    sai_port_info->port_valid = true;
                 } else {
-                    port_info_table->port_valid = false;
+                    sai_port_info->port_valid = false;
                 }
             }
-            port_info_table = sai_port_info_getnext(port_info_table);
+            sai_port_info = sai_port_info_getnext(sai_port_info);
         }
     }
 
@@ -1119,9 +860,12 @@ sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port, sai
 void sai_port_logical_list_get(sai_object_list_t *port_list)
 {
     uint_t count = 0;
-    STD_ASSERT(port_list != NULL);
-    STD_ASSERT(port_list->list != NULL);
     sai_port_info_t *port_info = NULL;
+    if((port_list == NULL) || (port_list->list == NULL)) {
+        SAI_PORT_LOG_TRACE("port_list is %p port_list->list is %p in port list get",
+                           port_list, port_list->list);
+        return;
+    }
 
     for (port_info = sai_port_info_getfirst(); (port_info != NULL);
          port_info = sai_port_info_getnext(port_info)) {
@@ -1140,11 +884,12 @@ void sai_port_logical_list_get(sai_object_list_t *port_list)
 bool sai_port_is_oper_up(sai_object_id_t port_obj)
 {
     bool port_oper_up = false;
-    sai_port_attr_info_t *port_attr_info = NULL;
 
     sai_port_lock ();
 
-    port_attr_info = sai_port_attr_info_get(port_obj);
+    sai_port_info_t            *sai_port_info = sai_port_info_get(port_obj);
+    const sai_port_attr_info_t *port_attr_info = sai_port_attr_info_read_only_get(port_obj,
+                                                                                  sai_port_info);
 
     if (port_attr_info == NULL) {
         SAI_PORT_LOG_ERR ("Port attr info not found for port 0x%"PRIx64"",port_obj);
@@ -1156,3 +901,66 @@ bool sai_port_is_oper_up(sai_object_id_t port_obj)
     return port_oper_up;
 }
 
+sai_status_t sai_port_def_bridge_port_set (sai_object_id_t port, sai_object_id_t bridge_port_id)
+{
+    sai_port_info_t *port_info_table = sai_port_info_get(port);
+
+    if(port_info_table == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    port_info_table->def_bridge_port_id = bridge_port_id;
+    return SAI_STATUS_SUCCESS;
+
+}
+
+sai_status_t sai_port_def_bridge_port_get (sai_object_id_t port, sai_object_id_t *bridge_port_id)
+{
+    sai_port_info_t *port_info_table = sai_port_info_get(port);
+
+    if(port_info_table == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    *bridge_port_id = port_info_table->def_bridge_port_id;
+    return SAI_STATUS_SUCCESS;
+
+}
+
+sai_status_t sai_port_increment_ref_count (sai_object_id_t port)
+{
+    sai_port_info_t *port_info_table = sai_port_info_get(port);
+
+    if(port_info_table == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    port_info_table->ref_count++;
+    return SAI_STATUS_SUCCESS;
+
+}
+
+sai_status_t sai_port_decrement_ref_count (sai_object_id_t port)
+{
+    sai_port_info_t *port_info_table = sai_port_info_get(port);
+
+    if(port_info_table == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    if(port_info_table->ref_count == 0) {
+        return SAI_STATUS_FAILURE;
+    }
+    port_info_table->ref_count--;
+    return SAI_STATUS_SUCCESS;
+
+}
+
+bool sai_is_port_in_use (sai_object_id_t port)
+{
+    sai_port_info_t *port_info_table = sai_port_info_get(port);
+
+    if(port_info_table == NULL) {
+        return false;
+    }
+    if(port_info_table->ref_count > 0) {
+        return true;
+    }
+    return false;
+}

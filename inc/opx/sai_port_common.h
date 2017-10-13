@@ -58,7 +58,7 @@ typedef rbtree_handle sai_port_info_table_t;
 /*
  * MAX Speeds supported at SAI. Update this on adding new speed.
  */
-#define SAI_MAX_SUPPORTED_SPEEDS      (9)
+#define SAI_MAX_SUPPORTED_SPEEDS      (10)
 
 /**
  * @brief SAI port speeds supported value in Mbps
@@ -68,6 +68,7 @@ typedef enum _sai_port_speed_t {
     SAI_PORT_SPEED_HUNDRED_MEG     = 100,
     SAI_PORT_SPEED_GIG             = 1000,
     SAI_PORT_SPEED_TEN_GIG         = 10000,
+    SAI_PORT_SPEED_TWENTY_GIG      = 20000,
     SAI_PORT_SPEED_TWENTY_FIVE_GIG = 25000,
     SAI_PORT_SPEED_FORTY_GIG       = 40000,
     SAI_PORT_SPEED_FORTYTWO_GIG    = 42000,
@@ -90,7 +91,8 @@ typedef enum _sai_port_speed_capability_t {
     SAI_PORT_CAP_SPEED_FORTY_TWO_GIG   = (1 << 6),
     SAI_PORT_CAP_SPEED_FIFTY_GIG       = (1 << 7),
     SAI_PORT_CAP_SPEED_HUNDRED_GIG     = (1 << 8),
-    SAI_PORT_CAP_SPEED_MAX             = (1 << 9),
+    SAI_PORT_CAP_SPEED_TWENTY_GIG      = (1 << 9),
+    SAI_PORT_CAP_SPEED_MAX             = (1 << 10),
 } sai_port_speed_capability_t;
 
 /**
@@ -321,6 +323,11 @@ typedef struct _sai_port_info_t
 
     /** Map dport number <dport_id> to internal port number <phy_port_id> */
     sai_npu_port_id_t     dport_id;
+    /** Bridge port object ID that is added to 1Q bridge */
+    sai_object_id_t       def_bridge_port_id;
+
+    /** Number of objects referencing this port */
+    uint_t                ref_count;
 } sai_port_info_t;
 
 /**

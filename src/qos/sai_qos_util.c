@@ -26,6 +26,7 @@
 #include "sai_port_common.h"
 #include "sai_port_utils.h"
 #include "std_assert.h"
+#include "sai_qos_buffer_util.h"
 
 #include "saitypes.h"
 #include "saistatus.h"
@@ -35,6 +36,7 @@
 #include "std_assert.h"
 #include "std_llist.h"
 #include "std_struct_utils.h"
+#include "sai_qos_port_util.h"
 
 #include <string.h>
 #include <inttypes.h>
@@ -88,9 +90,19 @@
 #define SAI_QOS_PORT_SCHEDULER_DLL_GLUE_OFFSET \
              STD_STR_OFFSET_OF (dn_sai_qos_port_t, scheduler_dll_glue)
 
-/** Offset of the queue dll glue in the qos queue data structure */
+/** Offset of the wred dll glue in the qos queue data structure */
 #define SAI_QOS_WRED_QUEUE_DLL_GLUE_OFFSET \
              STD_STR_OFFSET_OF(dn_sai_qos_queue_t, \
+                                    wred_dll_glue)
+
+/** Offset of the wred dll glue in the qos port wred pool data structure */
+#define SAI_QOS_WRED_PORT_DLL_GLUE_OFFSET \
+             STD_STR_OFFSET_OF(dn_sai_qos_port_pool_t, \
+                                    wred_dll_glue)
+
+/** Offset of the wred dll glue in the qos buffer pool data structure */
+#define SAI_QOS_WRED_BUFFER_POOL_DLL_GLUE_OFFSET \
+             STD_STR_OFFSET_OF(dn_sai_qos_buffer_pool_t, \
                                     wred_dll_glue)
 
 /* Simple Mutex lock for accessing QOS resources */
@@ -1236,32 +1248,350 @@ void sai_qos_wred_node_remove(sai_object_id_t wred_id)
     std_rbtree_remove(wred_tree, &wred_entry);
 }
 
-dn_sai_qos_queue_t *sai_qos_queue_node_from_wred_get(dn_sai_qos_wred_t *p_wred_node)
+const char *sai_qos_wred_link_str(dn_sai_qos_wred_link_t wred_link_type)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+            return "Queue";
+        case DN_SAI_QOS_WRED_LINK_PORT:
+            return "Port Pool";
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+            return "Buffer Pool";
+        default:
+            return "Unknown";
+    }
+}
+
+sai_object_id_t sai_qos_wred_link_oid_get(void *p_wred_link_node,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+            return ((dn_sai_qos_queue_t *)p_wred_link_node)->key.queue_id;
+        case DN_SAI_QOS_WRED_LINK_PORT:
+            return ((dn_sai_qos_port_pool_t *)p_wred_link_node)->port_pool_id;
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+            return ((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->key.pool_id;
+        default:
+            return SAI_NULL_OBJECT_ID;
+    }
+}
+
+std_dll_head *sai_qos_wred_link_get_head_ptr(
+        dn_sai_qos_wred_t *p_wred_node,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+            return &p_wred_node->queue_dll_head;
+        case DN_SAI_QOS_WRED_LINK_PORT:
+            return &p_wred_node->port_dll_head;
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+            return &p_wred_node->buffer_pool_dll_head;
+        default:
+            return NULL;
+    }
+}
+
+static inline size_t sai_qos_wred_link_get_glue_offset(
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+            return SAI_QOS_WRED_QUEUE_DLL_GLUE_OFFSET;
+        case DN_SAI_QOS_WRED_LINK_PORT:
+            return SAI_QOS_WRED_PORT_DLL_GLUE_OFFSET;
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+            return SAI_QOS_WRED_BUFFER_POOL_DLL_GLUE_OFFSET;
+        default:
+            return 0;
+    }
+}
+
+static void *sai_qos_wred_link_node_get(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+        {
+            return ((void *)sai_qos_queue_node_get(wred_link_id));
+        }
+        case DN_SAI_QOS_WRED_LINK_PORT:
+        {
+            return ((void *)sai_qos_port_pool_node_get_from_obj_id(wred_link_id));
+        }
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+        {
+            return ((void *)sai_qos_buffer_pool_node_get(wred_link_id));
+        }
+        default:
+            return NULL;
+    }
+}
+
+sai_object_id_t sai_qos_wred_link_wred_id_get(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    void *p_wred_link_node = NULL;
+
+    p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type);
+
+    if(NULL == p_wred_link_node) {
+        SAI_WRED_LOG_ERR("%s 0x%"PRIx64" not found in DB.",
+                sai_qos_wred_link_str(wred_link_type),wred_link_id);
+        return SAI_NULL_OBJECT_ID;
+    }
+
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+        {
+            return ((dn_sai_qos_queue_t *)p_wred_link_node)->wred_id;
+        }
+        case DN_SAI_QOS_WRED_LINK_PORT:
+        {
+            return ((dn_sai_qos_port_pool_t *)p_wred_link_node)->wred_id;
+        }
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+        {
+            return ((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->wred_id;
+        }
+        default:
+            return SAI_NULL_OBJECT_ID;
+    }
+}
+
+bool sai_qos_wred_link_is_sw_cached(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    void *p_wred_link_node = NULL;
+
+    p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type);
+
+    if(NULL == p_wred_link_node) {
+        SAI_WRED_LOG_ERR("%s 0x%"PRIx64" not found in DB.",
+                sai_qos_wred_link_str(wred_link_type),wred_link_id);
+        return false;
+    }
+
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+        {
+            return false;
+        }
+        case DN_SAI_QOS_WRED_LINK_PORT:
+        {
+            return (((dn_sai_qos_port_pool_t *)p_wred_link_node)->wred_sw_cached);
+        }
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+        {
+            return (((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->wred_sw_cached);
+        }
+        default:
+            return false;
+    }
+}
+
+sai_status_t sai_qos_wred_link_mark_sw_cache(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    void *p_wred_link_node = NULL;
+
+    p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type);
+
+    if(NULL == p_wred_link_node) {
+        SAI_WRED_LOG_ERR("%s 0x%"PRIx64" not found in DB.",
+                sai_qos_wred_link_str(wred_link_type),wred_link_id);
+        return SAI_STATUS_FAILURE;
+    }
+
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+        {
+            return SAI_STATUS_FAILURE;
+        }
+        case DN_SAI_QOS_WRED_LINK_PORT:
+        {
+            ((dn_sai_qos_port_pool_t *)p_wred_link_node)->wred_sw_cached = true;
+            return SAI_STATUS_SUCCESS;
+        }
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+        {
+            ((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->wred_sw_cached = true;
+            return SAI_STATUS_SUCCESS;
+        }
+        default:
+            return SAI_STATUS_FAILURE;
+    }
+}
+
+sai_status_t sai_qos_wred_link_unmark_sw_cache(sai_object_id_t wred_link_id,
+        dn_sai_qos_wred_link_t wred_link_type)
+{
+    void *p_wred_link_node = NULL;
+
+    p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type);
+
+    if(NULL == p_wred_link_node) {
+        SAI_WRED_LOG_ERR("%s 0x%"PRIx64" not found in DB.",
+                sai_qos_wred_link_str(wred_link_type),wred_link_id);
+        return SAI_STATUS_FAILURE;
+    }
+
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+        {
+            return SAI_STATUS_FAILURE;
+        }
+        case DN_SAI_QOS_WRED_LINK_PORT:
+        {
+            ((dn_sai_qos_port_pool_t *)p_wred_link_node)->wred_sw_cached = false;
+            return SAI_STATUS_SUCCESS;
+        }
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+        {
+            ((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->wred_sw_cached = false;
+            return SAI_STATUS_SUCCESS;
+        }
+        default:
+            return SAI_STATUS_FAILURE;
+    }
+}
+
+void *sai_qos_wred_link_node_get_first(dn_sai_qos_wred_t *p_wred_node,
+        dn_sai_qos_wred_link_t wred_link_type)
 {
     uint8_t *p_temp = NULL;
+    std_dll_head *p_dll_head = NULL;
     STD_ASSERT(p_wred_node != NULL);
 
-    if ((p_temp = ((uint8_t *) sai_qos_dll_get_first(&p_wred_node->queue_dll_head))))
-    {
-        return ((dn_sai_qos_queue_t *) (p_temp - SAI_QOS_WRED_QUEUE_DLL_GLUE_OFFSET));
+    p_dll_head = sai_qos_wred_link_get_head_ptr(p_wred_node,wred_link_type);
+
+    if(NULL != p_dll_head) {
+        p_temp = (uint8_t *)std_dll_getfirst(p_dll_head);
+
+        if(NULL != p_temp) {
+            return ((void *) (p_temp - sai_qos_wred_link_get_glue_offset(wred_link_type)));
+        }
     }
     return NULL;
 }
 
-dn_sai_qos_queue_t *sai_qos_next_queue_node_from_wred_get(dn_sai_qos_wred_t *p_wred_node,
-                                                            dn_sai_qos_queue_t *p_queue_node)
+void *sai_qos_wred_link_node_get_next(dn_sai_qos_wred_t *p_wred_node,
+        void* p_wred_link_node, dn_sai_qos_wred_link_t wred_link_type)
 {
     uint8_t *p_temp = NULL;
+    std_dll_head *p_dll_head = NULL;
+    std_dll *p_dll_glue = NULL;
 
     STD_ASSERT(p_wred_node != NULL);
-    STD_ASSERT(p_queue_node != NULL);
+    STD_ASSERT(p_wred_link_node != NULL);
 
-    if ((p_temp = ((uint8_t *) sai_qos_dll_get_next(&p_wred_node->queue_dll_head,
-                                                    &p_queue_node->wred_dll_glue))))
-    {
-        return ((dn_sai_qos_queue_t *) (p_temp - SAI_QOS_WRED_QUEUE_DLL_GLUE_OFFSET));
+    p_dll_head = sai_qos_wred_link_get_head_ptr(p_wred_node,wred_link_type);
+    p_dll_glue = (std_dll *)(((uint8_t *)p_wred_link_node) +
+            sai_qos_wred_link_get_glue_offset(wred_link_type));
+
+    if((NULL != p_dll_head) && (NULL != p_dll_glue)) {
+        p_temp = (uint8_t *)std_dll_getnext(p_dll_head, p_dll_glue);
+
+        if(NULL != p_temp) {
+            return ((void *) (p_temp - sai_qos_wred_link_get_glue_offset(wred_link_type)));
+        }
     }
     return NULL;
+}
+static void inline sai_qos_wred_link_wred_id_set(void *p_wred_link_node,
+        dn_sai_qos_wred_link_t wred_link_type, sai_object_id_t wred_id)
+{
+    switch(wred_link_type) {
+        case DN_SAI_QOS_WRED_LINK_QUEUE:
+            ((dn_sai_qos_queue_t *)p_wred_link_node)->wred_id = wred_id;
+            break;
+        case DN_SAI_QOS_WRED_LINK_PORT:
+            ((dn_sai_qos_port_pool_t *)p_wred_link_node)->wred_id = wred_id;
+            break;
+        case DN_SAI_QOS_WRED_LINK_BUFFER_POOL:
+            ((dn_sai_qos_buffer_pool_t *)p_wred_link_node)->wred_id = wred_id;
+            break;
+        default:
+            break;
+    }
+}
+
+sai_status_t sai_qos_wred_link_insert(sai_object_id_t wred_id,
+        sai_object_id_t wred_link_id, dn_sai_qos_wred_link_t wred_link_type)
+{
+    dn_sai_qos_wred_t *p_wred_node;
+    void *p_wred_link_node = NULL;
+    std_dll_head *p_wred_link_head = NULL;
+    std_dll *p_wred_link_glue = NULL;
+
+    if(SAI_NULL_OBJECT_ID == wred_id) {
+        return SAI_STATUS_SUCCESS;
+    }
+
+    if(!sai_is_obj_id_wred(wred_id)) {
+        return SAI_STATUS_INVALID_OBJECT_TYPE;
+    }
+
+    if((p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type)) == NULL) {
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    p_wred_node = sai_qos_wred_node_get(wred_id);
+
+    if(p_wred_node == NULL){
+        return SAI_STATUS_INVALID_PARAMETER;
+    } else {
+        p_wred_link_head = sai_qos_wred_link_get_head_ptr(p_wred_node, wred_link_type);
+
+        p_wred_link_glue = (std_dll *)(((uint8_t *)p_wred_link_node) +
+                sai_qos_wred_link_get_glue_offset(wred_link_type));
+
+        std_dll_insertatback(p_wred_link_head, p_wred_link_glue);
+
+        sai_qos_wred_link_wred_id_set(p_wred_link_node, wred_link_type, wred_id);
+    }
+
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_qos_wred_link_remove(sai_object_id_t wred_id,
+        sai_object_id_t wred_link_id, dn_sai_qos_wred_link_t wred_link_type)
+{
+    dn_sai_qos_wred_t *p_wred_node;
+    void *p_wred_link_node = NULL;
+    std_dll_head *p_wred_link_head = NULL;
+    std_dll *p_wred_link_glue = NULL;
+
+    if(SAI_NULL_OBJECT_ID == wred_id) {
+        return SAI_STATUS_SUCCESS;
+    }
+
+    if(!sai_is_obj_id_wred(wred_id)) {
+        return SAI_STATUS_INVALID_OBJECT_TYPE;
+    }
+
+    if((p_wred_link_node = sai_qos_wred_link_node_get(wred_link_id, wred_link_type)) == NULL) {
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    p_wred_node = sai_qos_wred_node_get(wred_id);
+
+    if(p_wred_node == NULL){
+        return SAI_STATUS_INVALID_PARAMETER;
+    } else {
+        p_wred_link_head = sai_qos_wred_link_get_head_ptr(p_wred_node, wred_link_type);
+
+        p_wred_link_glue = (std_dll *)(((uint8_t *)p_wred_link_node) +
+                sai_qos_wred_link_get_glue_offset(wred_link_type));
+
+        std_dll_remove(p_wred_link_head, p_wred_link_glue);
+        wred_id = SAI_NULL_OBJECT_ID;
+
+        sai_qos_wred_link_wred_id_set(p_wred_link_node, wred_link_type, wred_id);
+    }
+
+    return SAI_STATUS_SUCCESS;
 }
 sai_qos_map_type_t sai_get_map_type_from_port_attr(sai_attr_id_t port_attr)
 {

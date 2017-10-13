@@ -62,8 +62,10 @@ typedef struct _sai_lag_node_t {
     std_dll_head port_list;
     /*port_count: Number of ports in the LAG*/
     unsigned int port_count;
-    /*rif_id Router interface Identifier*/
-    sai_object_id_t rif_id;
+    /** Bridge port object ID that is added to 1Q bridge */
+    sai_object_id_t def_bridge_port_id;
+    /* Number of objects referencing LAG Object */
+    uint_t       ref_count;
 }sai_lag_node_t;
 
 #define SAI_LAG_ID_OFFSET STD_STR_OFFSET_OF(sai_lag_node_t,sai_lag_id)

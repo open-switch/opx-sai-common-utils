@@ -216,18 +216,56 @@ sai_status_t sai_qos_buffer_pool_get_first_pg_id (sai_object_id_t pool_id,
 /**
  * @brief Get First Queue that belong to the pool
  * @param[in] pool_id Buffer pool ID
- * @param[out] pg_id First Queue ID that belong to the pool
+ * @param[out] queue_id First Queue ID that belong to the pool
  *
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  * error code is returned.
  */
 sai_status_t sai_qos_buffer_pool_get_first_queue_id (sai_object_id_t pool_id,
                                                      sai_object_id_t *queue_id);
+/**
+ * @brief Get Reserved XOFF threshold from buffer profile
+ *
+ *  Buffer profile xoff_th reserved or upper limit dependent on buffer pool XOFF_SIZE.
+ *  If the user has set XOFF_SIZE = 0, the PG headroom buffer is equal to XOFF_TH
+ *  and it is not shared. If the user has set XOFF_SIZE > 0, the
+ *  total headroom pool buffer for all PGs is equal to XOFF_SIZE
+ *  and XOFF_TH specifies the maximum amount of headroom pool.
+ *  buffer one PG can use.
+ *
+ * @param[in] p_qos_buffer_profile_node Buffer profile node
+ *
+ * @return Size of reserved xoff size
+ */
+
+uint_t sai_qos_buffer_profile_get_reserved_xoff_th_get (const dn_sai_qos_buffer_profile_t
+                                                        *p_qos_buffer_profile_node);
+
+/**
+ * @brief Get Buffer pool xoff size configuration status
+ *
+ * @param[in] pool_id Buffer pool id
+ *
+ * @return Size of reserved xoff size
+ */
+bool sai_qos_is_buffer_pool_xoff_size_configured (sai_object_id_t pool_id);
+
+/**
+ * @brief Get unicast front end port queues that belong to the pool based on count
+ * @param[in] pool_id Buffer pool ID
+ * @param[out] p_queue_list Pointer to queue list buffer. Modifies the list count
+ *                          based on the number of queues updated in the list
+ *
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ * error code is returned.
+ */
+sai_status_t sai_qos_buffer_pool_get_wred_queue_ids(sai_object_id_t pool_id,
+        sai_object_list_t *p_queue_list);
 
 /** Logging utility for SAI Buffer API */
 #define SAI_BUFFER_LOG(level, msg, ...) \
         if (sai_is_log_enabled (SAI_API_BUFFERS, level)) { \
-            SAI_LOG_UTIL(ev_log_t_SAI_BUFFERS, level, msg, ##__VA_ARGS__); \
+            SAI_LOG_UTIL(ev_log_t_SAI_BUFFER, level, msg, ##__VA_ARGS__); \
         }
 
 /**

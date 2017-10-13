@@ -82,6 +82,109 @@ typedef enum {
      * {lag_id} --> {rif_id} list
      */
     SAI_MAP_TYPE_LAG_RIF_INFO,
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : bridge id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : bridge port id.
+     *
+     * {bridge_id} --> {bridge_port_id} list
+     */
+    SAI_MAP_TYPE_BRIDGE_TO_BRIDGE_PORT_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : port id,
+     * sai_map_key_t.id2   : vlan id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : bridge port id.
+     *
+     * {port_id, vlan_id} --> {bridge_port_id} list
+     */
+    SAI_MAP_TYPE_PORT_VLAN_TO_BRIDGE_PORT_LIST,
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : LAG id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : bridge port id.
+     *
+     * {lag_id} --> {bridge_port_id} list
+     */
+    SAI_MAP_TYPE_LAG_TO_BRIDGE_PORT_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : Bridge port id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : Vlan member id.
+     *
+     * {bridge_port_id} --> {vlan_member} list
+     */
+    SAI_MAP_TYPE_BRIDGE_PORT_TO_VLAN_MEMBER_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : Bridge port id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : Stp Port id.
+     *
+     * {bridge_port_id} --> {stp_port} list
+     */
+    SAI_MAP_TYPE_BRIDGE_PORT_TO_STP_PORT_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : Tunnel id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : Bridge port id.
+     *
+     * {tunnel_id} --> {bridge_port_id} list
+     */
+    SAI_MAP_TYPE_TUNNEL_TO_BRIDGE_PORT_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : Tunnel map id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : Tunnel id.
+     *
+     * {tunnel_map_id} --> {tunnel_id} list
+     */
+    SAI_MAP_TYPE_TUNNEL_MAP_TO_TUNNEL_LIST,
+
+    /*
+     * Key
+     * ---
+     * sai_map_key_t.id1   : Bridge port id,
+     *
+     * Value
+     * -----
+     * sai_map_data_t.val1 : L2mc member id.
+     *
+     * {bridge_port_id} --> {l2mc_member} list
+     */
+    SAI_MAP_TYPE_BRIDGE_PORT_TO_L2MC_MEMBER_LIST,
 } sai_map_type_t;
 
 typedef enum {
@@ -139,6 +242,20 @@ sai_status_t sai_map_delete_elements (sai_map_key_t        *key,
                                       sai_map_val_filter_t  filter);
 
 sai_status_t sai_map_get (sai_map_key_t *key, sai_map_val_t *val);
+/**
+ * @brief Get element at a particular index in the list
+ *        The module that used this API must make sure to take locks so as to avoid
+ *        modification while iterating through the list
+ *
+ * @param[in] key The key to be used for obtaining
+ * @param[in] index to be obtained
+ * @param[out] value Value retrieved from the index
+ * @return SAI_STATUS_SUCCESS if successful otherwise a different
+ *  error code is returned.
+ */
+sai_status_t sai_map_get_element_at_index (const sai_map_key_t *key,
+                                           uint32_t index,
+                                           sai_map_val_t *value);
 
 sai_status_t sai_map_get_elements (sai_map_key_t        *key,
                                    sai_map_val_t        *value,

@@ -192,7 +192,7 @@ uint_t sai_switch_get_max_lane_per_port(void)
     return (sai_switch_info_ptr->max_lane_per_port);
 }
 
-sai_npu_port_id_t sai_switch_get_max_port_mtu(void)
+uint_t sai_switch_get_max_port_mtu(void)
 {
     sai_switch_info_t *sai_switch_info_ptr = sai_switch_info_get();
 

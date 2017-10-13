@@ -238,6 +238,42 @@ sai_status_t sai_map_get (sai_map_key_t *key, sai_map_val_t *value)
     return rc;
 }
 
+sai_status_t sai_map_get_element_at_index (const sai_map_key_t *key,
+                                           uint32_t index,
+                                           sai_map_val_t *value)
+{
+    sai_status_t rc = SAI_STATUS_SUCCESS;
+
+    if((value == NULL) || (key == NULL)) {
+       return SAI_STATUS_INVALID_PARAMETER;
+    }
+
+    std_mutex_lock (&sai_map_mutex);
+
+    try {
+        auto map_it = g_sai_map.find (*key);
+        if (map_it != g_sai_map.end()) {
+            std::vector <sai_map_data_t>& list = map_it->second;
+
+            if (index >= list.size()) {
+                rc = SAI_STATUS_INVALID_PARAMETER;
+            }
+            else {
+                value->data[0] = list.at(index);
+            }
+
+        }
+        else {
+            rc = SAI_STATUS_ITEM_NOT_FOUND;
+        }
+    }
+    catch (...) {
+        rc = SAI_STATUS_FAILURE;
+    }
+
+    std_mutex_unlock (&sai_map_mutex);
+    return rc;
+}
 sai_status_t sai_map_get_elements (sai_map_key_t        *key,
                                    sai_map_val_t        *value,
                                    sai_map_val_filter_t  filter)

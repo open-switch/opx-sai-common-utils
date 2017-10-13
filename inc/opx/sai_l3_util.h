@@ -156,6 +156,8 @@
 /** Next-hop Type is not initialized */
 #define SAI_FIB_ROUTE_NH_TYPE_NONE           ((uint_t) -1)
 
+/** Tunnel type is not valid */
+#define SAI_FIB_TUNNEL_TYPE_NONE                    (0)
 /** Constant for IPv6 Address Family prefix bit length */
 #define SAI_IPV6_ADDR_PREFIX_LEN  (SAI_IPV6_ADDR_NUM_BYTES * BITS_PER_BYTE)
 
@@ -382,6 +384,18 @@ sai_fib_router_interface_t *sai_fib_router_interface_node_get (
                                  sai_object_id_t rif_id);
 
 /**
+ * @brief Check if router interface is create
+ *
+ * @param[in] rif_id    Router Interface id
+ * @return true if rif_id is created
+ * otherwise false
+ */
+bool sai_fib_is_rif_created (sai_object_id_t rif_id);
+
+sai_status_t sai_rif_increment_ref_count (sai_object_id_t rif_id);
+
+sai_status_t sai_rif_decrement_ref_count (sai_object_id_t rif_id);
+/**
  * @brief Get SAI FIB Next Hop node using next_hop_id.
  *
  * @param[in] nh_id    Next Hop id
@@ -411,13 +425,16 @@ sai_fib_vrf_t* sai_fib_get_vrf_node_for_rif (sai_object_id_t rif_id);
  * @brief Get SAI FIB IP next hop node for the Next hop IP address.
  *
  * @param[in] nh_type   Next Hop type
- * @param[in] vrf_id    Virtual router id
+ * @param[in] rif_id    Router interface id
  * @param[in] p_ip_addr   Pointer to the Next Hop IP address
+ * @param[in] tunnel_type Tunnel type when next hop is of type
+ *                        SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP
  * @return Pointer to the next hop node if found otherwise NULL
  */
 sai_fib_nh_t* sai_fib_ip_next_hop_node_get (sai_next_hop_type_t nh_type,
-                                            sai_object_id_t vrf_id,
-                                            sai_ip_address_t *p_ip_addr);
+                                            sai_object_id_t rif_id,
+                                            sai_ip_address_t *p_ip_addr,
+                                            sai_tunnel_type_t tunnel_type);
 
 /**
  * @brief Find if the next hop group node is present in next hop's group list.

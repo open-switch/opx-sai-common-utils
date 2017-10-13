@@ -138,43 +138,50 @@ bool sai_is_port_valid(sai_object_id_t port);
  * @brief Get all the port attributes info for a given logical or CPU port
  *
  * @param[in] port  sai switch port number
+ * @param[in] port_info  Pointer to  SAI port info structure
  * @return pointer to port attribute info corresponding to a given
  *  valid port id else NULL for an invalid port
  */
-sai_port_attr_info_t *sai_port_attr_info_get(sai_object_id_t port);
+sai_port_attr_info_t *sai_port_attr_info_get_for_update(sai_object_id_t port,
+                                                        sai_port_info_t *port_info);
 
+/**
+ * @brief Get all the port attributes info for a given logical or CPU port as const pointer
+ *
+ * @param[in] port  sai switch port number
+ * @param[in] port_info  Pointer to  SAI port info structure
+ * @return pointer to port attribute info corresponding to a given
+ *  valid port id else NULL for an invalid port
+ */
+const sai_port_attr_info_t *sai_port_attr_info_read_only_get(sai_object_id_t port,
+                                                            const sai_port_info_t *port_info_table);
 /**
  * @brief Update a specific port attribute info for a given logical port
  *
  * @param[in] port  sai switch port number
+ * @param[in] port_info  Pointer to  SAI port info structure
  * @param[in] attr pointer to the port attribute with attr id and value
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
+                                          sai_port_info_t *port_info,
                                           const sai_attribute_t *attr);
 
 /**
  * @brief Get a specific port attribute info for a given logical port
  *
  * @param[in] port  sai switch port number
+ * @param[in] port_info  Pointer to  SAI port info structure
  * @param[inout] attr pointer to the port attribute with attr id as input and
  *  value as output
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
+                                          const sai_port_info_t *port_info,
                                           sai_attribute_t *attr);
 
-/**
- * @brief Get the phy device type of a given switch port
- *
- * @param[in] port  sai switch port number
- * @param[out] phy_type  phy device type of the port
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_phy_type_get(sai_object_id_t port, sai_port_phy_t *phy_type);
 
 
 /**
@@ -188,17 +195,6 @@ sai_status_t sai_port_phy_type_get(sai_object_id_t port, sai_port_phy_t *phy_typ
  *  error code is returned.
  */
 sai_status_t sai_port_port_group_get(sai_object_id_t port, uint_t *port_group);
-
-/**
- * @brief Get the external physical address of a given switch port
- *
- * @param[in] port  sai switch port number
- * @param[out] ext_phy_addr  external physical address of the port
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_ext_phy_addr_get(sai_object_id_t port,
-                                       sai_npu_port_id_t *ext_phy_addr);
 
 /**
  * @brief Get the local/logical port for the given sai switch port;
@@ -223,129 +219,24 @@ sai_status_t sai_port_to_npu_local_port(sai_object_id_t port,
  */
 sai_status_t sai_npu_local_port_to_sai_port(sai_npu_port_id_t local_port_id,
                                             sai_object_id_t *port);
-/**
- * @brief Get the physical port number for the given switch port
- *
- * @param[in] port  sai switch port number
- * @param[out] phy_port_id  physical port number for the given switch port
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_to_physical_port(sai_object_id_t port,
-                                       sai_npu_port_id_t *phy_port_id);
-
-/**
- * @brief Get the maximum SerDess lanes for the given sai port
- *
- * @param[in] port  sai switch port number
- * @param[out] max_lanes_per_port  max SerDes lanes for the given port
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_max_lanes_get(sai_object_id_t port,
-                                    uint_t *max_lanes_per_port);
-
-/**
- * @brief Get the active lane bitmap for a given sai port
- *
- * @param[in] port  sai switch port number
- * @param[out] port_lane_bmap  active lane bitmap value
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_lane_bmap_get(sai_object_id_t port,
-                                    uint64_t *port_lane_bmap);
-
-/**
- * @brief Set the active lane bitmap for a given sai port
- *
- * @param[in] port  sai switch port number
- * @param[in] port_lane_bmap  active lane bitmap value
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_lane_bmap_set(sai_object_id_t port,
-                                    uint64_t port_lane_bmap);
-
-/**
- * @brief Get the speed of the switch port
- *
- * @param[in] port  sai switch port number
- * @param[out] speed  port speed in Gbps
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_speed_get(sai_object_id_t port, sai_port_speed_t *speed);
-
-/**
- * @brief Set the speed of the switch port
- *
- * @param[in] port  sai switch port number
- * @param[in] speed  port speed in Gbps
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_speed_set(sai_object_id_t port, sai_port_speed_t speed);
-
-/**
- * @brief Get the optics media type inserted in the switch port
- *
- * @param[in] port  sai switch port number
- * @param[out] media_type  media type inserted
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_media_type_get(sai_object_id_t port,
-                                     sai_port_media_type_t *media_type);
-
-/**
- * @brief Set the optics media type inserted in the switch port
- *
- * @param[in] port  sai switch port number
- * @param[in] media_type  media type inserted
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-sai_status_t sai_port_media_type_set(sai_object_id_t port,
-                                     sai_port_media_type_t media_type);
 
 /**
  * @brief Check if a given port capability is supported.
  *
- * @param[in] port  sai switch port number
+ * @param[in] sai_port_info  Pointer to SAI port info structure
  * @param[in] capb_mask  capability bit mask in sai_port_capability_t
  * @param[out] value  true or false
  * @sa sai_port_capability_t
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-sai_status_t sai_is_port_capb_supported(sai_object_id_t port,
-                                        uint64_t capb_mask, bool *value);
-
-/**
- * @brief Set the given port capability supported flags
- *
- * @param[in] port  sai switch port number
- * @param[in] capb_val  capability bit mask in sai_port_capability_t
- * @sa sai_port_capability_t
- */
-void sai_port_supported_capability_set(sai_object_id_t port,
-                                       uint64_t capb_val);
-
-/**
- * @brief Check if breakout mode is supported in the port
- *
- * @param[in] port  sai switch port number
- * @param[in] breakout_type  breakout mode types in sai_port_capability_t
- * @param[out] value  true or false
- * @sa sai_port_capability_t
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- */
-static inline sai_status_t sai_port_is_breakout_type_supported(sai_object_id_t port,
-                                                               uint64_t breakout_type, bool *value)
+static inline bool sai_is_port_capb_supported(const sai_port_info_t *sai_port_info,
+                                              uint64_t capb_mask)
 {
-    return (sai_is_port_capb_supported(port, breakout_type, value));
+    if(sai_port_info->port_supported_capb & capb_mask) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -361,15 +252,6 @@ static inline sai_status_t sai_port_is_breakout_type_supported(sai_object_id_t p
 sai_status_t sai_is_port_capb_enabled(sai_object_id_t port,
                                       uint64_t capb_mask, bool *value);
 
-/**
- * @brief Enable the given port capabilities
- *
- * @param[in] port  sai switch port number
- * @param[in] enable  flag to enable or disable the capb_val
- * @param[in] capb_val  capability bit mask in sai_port_capability_t
- * @sa sai_port_capability_t
- */
-void sai_port_capablility_enable(sai_object_id_t port, bool enable, uint64_t capb_val);
 
 /**
  * @brief Check if a given breakout type is enabled in the port
@@ -381,10 +263,9 @@ void sai_port_capablility_enable(sai_object_id_t port, bool enable, uint64_t cap
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-static inline sai_status_t sai_port_is_breakout_type_enabled(sai_object_id_t port,
-                                                             uint64_t breakout_type, bool *value)
+static inline bool sai_port_is_breakout_enabled(const sai_port_info_t *port_info)
 {
-    return (sai_is_port_capb_enabled(port, breakout_type, value));
+    return (port_info->port_enabled_capb & SAI_PORT_CAP_BREAKOUT_MODE);
 }
 
 /**
@@ -576,42 +457,47 @@ static inline sai_port_breakout_mode_type_t sai_port_get_breakout_mode_from_port
  * CPU port is not supported by thie API.
  *
  * @param[in] port_id  sai switch port number
+ * @param[in] sai_port_info Pointer to SAI port info structure
  * @param[inout] list of hardware lanes for the port
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-sai_status_t sai_port_attr_hw_lane_list_get(sai_object_id_t port_id, sai_attribute_value_t *value);
+sai_status_t sai_port_attr_hw_lane_list_get(sai_object_id_t port_id,
+                                            const sai_port_info_t *sai_port_info,
+                                            sai_attribute_value_t *value);
 
 /**
  * @brief Get the supported breakout mode(s) for a given SAI logical port.
  * CPU port is not supported by thie API.
  *
  * @param[in] port_id  sai switch port number
+ * @param[in] sai_port_info Pointer to SAI port info structure
  * @param[inout] value list of supported breakout mode(s) for the port
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 sai_status_t sai_port_attr_supported_breakout_mode_get(sai_object_id_t port_id,
+                                                       const sai_port_info_t *sai_port_info,
                                                        sai_attribute_value_t *value);
 
 /**
  * @brief Get the current breakout mode for a given SAI logical port.
  * CPU port is not supported by thie API.
  *
- * @param[in] port_id  sai switch port number
+ * @param[in] port_info Pointer to SAI port info structure
  * @return Current breakout mode of the port
  */
-sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(sai_object_id_t port);
+sai_port_breakout_mode_type_t sai_port_current_breakout_mode_get(const sai_port_info_t *port_info);
 
 /**
  * @brief Updates the port info before applying breakout mode
  *
- * @param[in] port_id  sai switch port number
+ * @param[in] port_info  Pointer to SAI port info structure
  * @param[in] breakout_cfg Structure containing breakout config
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-sai_status_t sai_port_breakout_mode_update (sai_object_id_t port,
+sai_status_t sai_port_breakout_mode_update (sai_port_info_t *port_info,
                                             sai_port_breakout_config_t  *breakout_cfg);
 
 
@@ -626,22 +512,24 @@ void sai_port_logical_list_get(sai_object_list_t *port_list);
  * @brief Get the port type for a given sai port
  *
  * @param[in] port_id  sai switch port number - can be Logical or CPU port
+ * @param[in] sai_port_info  SAI port info structure
  * @param[out] value  pointer to get the port type
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
 sai_status_t sai_port_attr_type_get(sai_object_id_t port_id,
+                                    const sai_port_info_t *sai_port_info,
                                     sai_attribute_value_t *value);
 
 /**
  * @brief Update the supported speed values for the given sai port
  *
- * @param[in] port  sai switch port number
  * @param[in] speed_capb Supported speed bitmap
+ * @param[in] sai_port_info  SAI port info structure
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  */
-sai_status_t sai_port_attr_supported_speed_update(sai_object_id_t port,
+sai_status_t sai_port_attr_supported_speed_update(sai_port_info_t *sai_port_info,
                                                   uint_t speed_capb);
 
 /**
@@ -673,43 +561,95 @@ bool sai_port_is_oper_up(sai_object_id_t port_obj);
  */
 sai_port_info_t *sai_port_info_get_from_npu_phy_port(sai_npu_port_id_t phy_port_id);
 
-
-/**
- * @brief Mark whether port is valid or not
- *
- * @param[in] port_id SAI Port identifier
- * @param[in] valid True if valid, false if not
- * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
- *  error code is returned.
- *
- */
-sai_status_t sai_port_validity_set (sai_object_id_t port, bool valid);
-
-
 /**
  * @brief Update validity on create. Mark the create port as valid and rest as invalid
  *        Other ports validity will be updated on their respective create
  *
  * @param[in] create_port The port used in create API
- * @param[in] control_port The first port in the breakout mode
+ * @param[in] sai_port_info The port info for 1st port in the port group
  * @param[in] new_mode The new breakout mode applied
  * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
  *  error code is returned.
  *
  */
-sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port, sai_object_id_t control_port,
+sai_status_t sai_port_update_valdity_on_create (sai_object_id_t create_port,
+                                                sai_port_info_t *sai_control_port_info,
                                                 sai_port_breakout_mode_type_t new_mode);
 
 /**
  * @brief Check whether if breakout mode is supported
  *
- * @param[in] port_id SAI Port identifier
+ * @param[in] sai_port_info Pointer to SAI port info structure
  * @param[in] breakout_mode Port breakout mode
  * @return true if supported
  *         false if not supported
  *
  */
-bool sai_port_is_breakout_mode_supported (sai_object_id_t port_id,
+bool sai_port_is_breakout_mode_supported (const sai_port_info_t *sai_port_info,
                                           sai_port_breakout_mode_type_t breakout_mode);
 
+
+/**
+ * @brief Set the default 1Q bridge port associated for the port in port cache
+ *
+ * @param[in] port_id SAI Port identifier
+ * @param[in] bridge_port_id Bridge port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_def_bridge_port_set (sai_object_id_t port, sai_object_id_t bridge_port_id);
+
+/**
+ * @brief Get the default 1Q bridge port associated for the port from port cache
+ *
+ * @param[in] port_id SAI Port identifier
+ * @param[out] bridge_port_id Bridge port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_def_bridge_port_get (sai_object_id_t port, sai_object_id_t *bridge_port_id);
+
+/**
+ * @brief Increment the port reference count
+ *
+ * @param[in] port_id SAI Port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_increment_ref_count (sai_object_id_t port);
+
+/**
+ * @brief Decrement the port reference count
+ *
+ * @param[in] port_id SAI Port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_port_decrement_ref_count (sai_object_id_t port);
+
+/**
+ * @brief Check if the port is in use
+ *
+ * @param[in] port_id SAI Port identifier
+ * @return true if reference count greater than zero, false otherwise
+ *
+ */
+bool sai_is_port_in_use (sai_object_id_t port);
+
+/**
+ * @brief Check the attribute value applied on port is duplicate
+ *
+ * @param[in] port_id SAI Port identifier
+ * @param[in] port_info A pointer to port info structure for the port
+ * @param[in] attr Attribute to be checked
+ * @return true if attribute contains duplicate value, false otherwise
+ *
+ */
+bool sai_port_is_duplicate_attribute_val (sai_object_id_t port_id,
+                                          const sai_port_info_t *port_info,
+                                          const sai_attribute_t *attr);
 #endif /* __SAI_PORT_UTILS_H__ */

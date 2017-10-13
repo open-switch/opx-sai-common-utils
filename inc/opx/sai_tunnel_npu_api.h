@@ -110,6 +110,65 @@ typedef sai_status_t (*sai_npu_tunnel_term_create_fn) (
 typedef sai_status_t (*sai_npu_tunnel_term_remove_fn) (
                                     dn_sai_tunnel_term_entry_t *p_tunnel_term);
 
+/**
+ * @brief Create a Tunnel Map entry object in NPU.
+ *
+ * @param[in] p_tunnel_map_entry Pointer to the Tunnel map entry node
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_tunnel_map_entry_create_fn) (
+                                    dn_sai_tunnel_map_entry_t *p_tunnel_map_entry);
+
+/**
+ * @brief Remove Tunnel map entry object in NPU.
+ *
+ * @param[in] p_tunnel_map_entry Pointer to the Tunnel map entry node
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_tunnel_map_entry_remove_fn) (
+                                    dn_sai_tunnel_map_entry_t *p_tunnel_map_entry);
+
+/**
+ * @brief Set Tunnel map entry attribute in NPU.
+ *
+ * @param[in] p_tunnel_map_entry Pointer to the Tunnel map entry node
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ */
+typedef sai_status_t (*sai_npu_tunnel_map_entry_set_fn) (
+                                    dn_sai_tunnel_map_entry_t *p_tunnel_map_entry);
+
+/**
+ * @brief Get tunnel statistics from the NPU.
+ *
+ * @param[in] tunnel_id Tunnel object id
+ * @param[in] num_counters Number of counters.
+ * @param[in] counter_ids Pointer to counter ids
+ * @param[out] The counter values retrieved from the NPU.
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+typedef sai_status_t (*sai_npu_tunnel_stats_get_fn) (sai_object_id_t tunnel_id,
+                                                     uint32_t num_counters,
+                                                     const sai_tunnel_stat_t *counter_ids,
+                                                     uint64_t *counters);
+
+/**
+ * @brief Clear tunnel statistics from the NPU.
+ *
+ * @param[in] tunnel_id Tunnel object id
+ * @param[in] num_counters Number of counters.
+ * @param[in] counter_ids Pointer to counter ids
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+typedef sai_status_t (*sai_npu_tunnel_stats_clear_fn) (sai_object_id_t tunnel_id,
+                                                       uint32_t num_counters,
+                                                       const sai_tunnel_stat_t *counter_ids);
 
 /**
  * @brief Tunnel NPU Plugin API table.
@@ -123,6 +182,11 @@ typedef struct _sai_npu_tunnel_api_t {
     sai_npu_tunnel_attr_validate_fn          tunnel_obj_attr_validate;
     sai_npu_tunnel_term_create_fn            tunnel_term_entry_create;
     sai_npu_tunnel_term_remove_fn            tunnel_term_entry_remove;
+    sai_npu_tunnel_map_entry_create_fn       tunnel_map_entry_create;
+    sai_npu_tunnel_map_entry_remove_fn       tunnel_map_entry_remove;
+    sai_npu_tunnel_map_entry_set_fn          tunnel_map_entry_set;
+    sai_npu_tunnel_stats_get_fn              tunnel_stats_get;
+    sai_npu_tunnel_stats_clear_fn            tunnel_stats_clear;
 }sai_npu_tunnel_api_t;
 
 

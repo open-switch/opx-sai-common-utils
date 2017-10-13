@@ -41,54 +41,6 @@ sai_status_t sai_init_fdb_tree(void);
 */
 sai_fdb_entry_node_t* sai_get_fdb_entry_node(const sai_fdb_entry_t *fdb_entry);
 
-/** SAI FDB API - Delete FDB entry Node from cache
-      \param[in] FDB entry for which node to be removed from cache
-      \return Success: SAI_STATUS_SUCCESS
-                    Failure: SAI_STATUS_ITEM_NOT_FOUND
-*/
-sai_status_t sai_delete_fdb_entry_node (const sai_fdb_entry_t *fdb_entry);
-
-/** SAI FDB API - Delete All FDB entry Nodes from cache
-      \param[in] delete_all Set if delete both static and dynamic entry types is required
-      \param[in] flush_entry_type Entry type that needs to be flushed
-*/
-void sai_delete_all_fdb_entry_nodes (bool delete_all, sai_fdb_flush_entry_type_t flush_entry_type);
-
-/** SAI FDB API - Delete All FDB entry Node per port from cache
-      \param[in] port_id Port Id for which FDB entries need to be flushed
-      \param[in] delete_all Set if delete both static and dynamic entry types is required
-      \param[in] flush_entry_type Entry type that needs to be flushed
-*/
-void sai_delete_fdb_entry_nodes_per_port (sai_object_id_t port_id, bool delete_all,
-                                          sai_fdb_flush_entry_type_t flush_entry_type);
-
-/** SAI FDB API - Delete All FDB entry Node per vlan from cache
-      \param[in] vlan_id VLAN Id for which FDB entries need to be flushed
-      \param[in] delete_all Set if delete both static and dynamic entry types is required
-      \param[in] flush_entry_type Entry type that needs to be flushed
-*/
-void sai_delete_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id, bool delete_all,
-                                          sai_fdb_flush_entry_type_t flush_entry_type);
-
-/** SAI FDB API - Delete All FDB entry Node per port per vlan from cache
-      \param[in] port_id Port Id for which FDB entries need to be flushed
-      \param[in] vlan_id VLAN Id for which FDB entries need to be flushed
-      \param[in] delete_all Set if delete both static and dynamic entry types is required
-      \param[in] flush_entry_type Entry type that needs to be flushed
-*/
-void sai_delete_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
-                                               sai_vlan_id_t vlan_id, bool delete_all,
-                                               sai_fdb_flush_entry_type_t flush_entry_type);
-
-/** SAI FDB API - Add FDB entry Node to cache
-      \param[in] fdb_entry_node FDB entry Node to be added to cache
-      \return NULL, if FBD insertion fails,
-              else pointer to the inserted FDB entry Node. The caller can
-                   detect if the node is already present in the tree, by
-                   comparing the passed and returned fdb entry pointers.
-*/
-sai_fdb_entry_node_t *sai_add_fdb_entry_node_in_global_tree(
-                                        sai_fdb_entry_node_t *fdb_entry_node);
 
 /** SAI FDB API - Create and insert FDB entry Node to cache
       \param[in] fdb_entry FDB entry to be cached
@@ -132,11 +84,6 @@ void sai_fdb_lock(void);
 */
 void sai_fdb_unlock(void);
 
-/** SAI FDB API - Get cache for dump API
-      \return Success: A valid pointer to cache
-              Failure: NULL
-*/
-std_rt_table *sai_fdb_cache_get(void);
 
 /** SAI FDB API - Write a registered FDB entry into cache so that an event
                   like insert, delete or move could trigger the notification to subscriber
@@ -155,12 +102,12 @@ sai_status_t sai_fdb_remove_registered_entry_from_cache (const sai_fdb_entry_t *
 
 /** SAI FDB API - Internal callback function pointer declaration
     \param[in] num_notification Number of notifications
-    \param[in] data Array of sai_fdb_notification_data_t containing notification information
+    \param[in] data Array of sai_fdb_internal_notification_data_t containing notification information
     \return Success: SAI_STATUS_SUCCESS
             Failure: Appropriate error code will be returned
 */
 typedef sai_status_t (*sai_fdb_internal_callback_fn)(uint_t num_notification,
-                                                     sai_fdb_notification_data_t *data);
+                                                     sai_fdb_internal_notification_data_t *data);
 
 
 /** SAI FDB API - Register internal callback function
@@ -179,11 +126,6 @@ void sai_fdb_send_internal_notifications(void);
 */
 bool sai_fdb_is_notifications_pending (void);
 
-/** SAI FDB API - Get Registered cache for dump API
-      \return Success: A valid pointer to cache
-              Failure: NULL
-*/
-std_rt_table *sai_fdb_registered_entry_cache_get(void);
 
 /** SAI FDB API - Get FDB entry type for flush
       \param[in] flush_entry_type The type of entry that needs to be flushed
@@ -202,51 +144,26 @@ static inline sai_fdb_entry_type_t sai_get_sai_fdb_entry_type_for_flush(sai_fdb_
 
 /** SAI FDB API - NPU FDB notification function
       \param[in] num_notification Number of notifications
-      \param[in] data List of notifications data
-      \param[in] add_data List of additional data for processing
+      \param[in] event_data List of data associated with the FDB event
 */
 typedef void (*sai_fdb_npu_event_notification_fn) (uint_t num_notification,
-                                                   sai_fdb_event_notification_data_t *data,
-                                                   sai_fdb_even_additional_data_t *add_data);
+                                                   sai_fdb_event_data_t *event_data);
 
 /** SAI FDB API - Remove FDB entry node from cache
       \param[in] fdb_entry_node Remove FDB entry node from cache
-      \param[in] delete_in_npu Delete in NPU if flush callback is registered
-      \param[in] validate_port If set to true, check if port in hardware and FDB cache are same. If they are not
-                 same return error
-      \return Success: SAI_STATUS_SUCCESS
-              Failure: Appropriate error code will be returned
 
 */
-sai_status_t sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node,
-                                        bool delete_in_npu, bool validate_port);
-/* DEBUG ROUTINES */
-/** SAI FDB API - Dump all FDB entry nodes */
-void sai_dump_all_fdb_entry_nodes (void);
+void sai_remove_fdb_entry_node (sai_fdb_entry_node_t *fdb_entry_node);
 
-/** SAI FDB API - Dump FDB entry count */
-void sai_dump_all_fdb_entry_count (void);
+/** SAI FDB API - Get the next FDB entry node from cache
+      \param[in] fdb_key Key of the current FDB entry node
 
-/** SAI FDB API - Dump all FDB registered nodes by l3 module */
-void sai_dump_all_fdb_registered_nodes (void);
-
-/** SAI FDB API - Dump all FDB entry nodes per port
-      \param[in] port_id SAI Port object ID on which FDB entries to be dumped
 */
-void sai_dump_fdb_entry_nodes_per_port (sai_object_id_t port_id);
+sai_fdb_entry_node_t *sai_get_next_fdb_entry_node (sai_fdb_entry_key_t *fdb_key);
 
-/** SAI FDB API - Dump all FDB entry nodes per vlan
-      \param[in] vlan_id VLAN ID on which FDB entries to be dumped
+/** SAI FDB API - Get the next FDB registered node from cache
+      \param[in] fdb_key Key of the current FDB registered node
+
 */
-void sai_dump_fdb_entry_nodes_per_vlan (sai_vlan_id_t vlan_id);
-
-/** SAI FDB API - Dump all FDB entry nodes port port vlan
-      \param[in] port_id SAI Port object ID on which FDB entries to be dumped
-      \param[in] vlan_id VLAN ID on which FDB entries to be dumped
-*/
-void sai_dump_fdb_entry_nodes_per_port_vlan (sai_object_id_t port_id,
-                                             sai_vlan_id_t vlan_id);
-
-/** SAI FDB API - Dump all pending FDB to L3 notification nodes */
-void sai_dump_pending_fdb_to_l3_notifs (void);
+sai_fdb_registered_node_t *sai_get_next_fdb_registered_node (sai_fdb_entry_key_t *fdb_key);
 #endif

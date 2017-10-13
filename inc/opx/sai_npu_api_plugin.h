@@ -32,12 +32,15 @@
 #include "sai_npu_stp.h"
 #include "sai_npu_switch.h"
 #include "sai_npu_vlan.h"
+#include "sai_npu_l2mc.h"
+#include "sai_npu_mcast.h"
 #include "sai_shell_npu.h"
 #include "sai_npu_samplepacket.h"
 #include "sai_npu_hostif.h"
 #include "sai_npu_qos.h"
 #include "sai_udf_npu_api.h"
 #include "sai_tunnel_npu_api.h"
+#include "sai_bridge_npu_api.h"
 
 /**
  * @brief NPU API method table.
@@ -71,6 +74,9 @@ typedef struct _sai_npu_api_t {
     const sai_npu_udf_api_t          *udf_api;
     const sai_npu_buffer_api_t       *buffer_api;
     const sai_npu_tunnel_api_t       *tunnel_api;
+    const sai_npu_bridge_api_t       *bridge_api;
+    const sai_npu_l2mc_api_t         *l2mc_api;
+    const sai_npu_mcast_api_t        *mcast_api;
 } sai_npu_api_t;
 
 

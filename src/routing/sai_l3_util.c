@@ -86,6 +86,38 @@ sai_fib_router_interface_t* sai_fib_router_interface_node_get (
                                                                 &rif_entry));
 }
 
+bool sai_fib_is_rif_created (sai_object_id_t rif_id)
+{
+    if(sai_fib_router_interface_node_get(rif_id) != NULL) {
+        return true;
+    }
+    return false;
+}
+
+sai_status_t sai_rif_increment_ref_count (sai_object_id_t rif_id)
+{
+    sai_fib_router_interface_t *p_rif_node = sai_fib_router_interface_node_get(rif_id);
+
+    if(p_rif_node == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    p_rif_node->ref_count++;
+    return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_rif_decrement_ref_count (sai_object_id_t rif_id)
+{
+    sai_fib_router_interface_t *p_rif_node = sai_fib_router_interface_node_get(rif_id);
+
+    if(p_rif_node == NULL) {
+        return SAI_STATUS_ITEM_NOT_FOUND;
+    }
+    if(p_rif_node->ref_count == 0) {
+        return SAI_STATUS_FAILURE;
+    }
+    p_rif_node->ref_count--;
+    return SAI_STATUS_SUCCESS;
+}
 sai_fib_vrf_t* sai_fib_get_vrf_node_for_rif (sai_object_id_t rif_id)
 {
     sai_fib_router_interface_t  *p_rif_node = NULL;
@@ -128,7 +160,8 @@ sai_fib_nh_t* sai_fib_next_hop_node_get_from_id (sai_object_id_t nh_id)
 
 sai_fib_nh_t* sai_fib_ip_next_hop_node_get (sai_next_hop_type_t nh_type,
                                             sai_object_id_t rif_id,
-                                            sai_ip_address_t *p_ip_addr)
+                                            sai_ip_address_t *p_ip_addr,
+                                            sai_tunnel_type_t tunnel_type)
 {
     sai_fib_nh_t        *p_nh_node = NULL;
     sai_fib_vrf_t       *p_vrf_node = NULL;
@@ -139,6 +172,11 @@ sai_fib_nh_t* sai_fib_ip_next_hop_node_get (sai_next_hop_type_t nh_type,
 
     nh_key.nh_type = nh_type;
     nh_key.rif_id  = rif_id;
+    if (nh_type == SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP) {
+        nh_key.tunnel_type = tunnel_type;
+    } else {
+        nh_key.tunnel_type = SAI_FIB_TUNNEL_TYPE_NONE;
+    }
 
     p_ip_nh_key      = &nh_key.info.ip_nh;
 
@@ -217,6 +255,8 @@ const char *sai_fib_rif_type_to_str (uint_t type)
         return "Port";
     } else if (type == SAI_ROUTER_INTERFACE_TYPE_VLAN) {
         return "Vlan";
+    } else if (type == SAI_ROUTER_INTERFACE_TYPE_LOOPBACK) {
+        return "Loopback";
     } else {
         return "Invalid";
     }
@@ -236,8 +276,10 @@ uint_t sai_fib_rif_attachment_id_get (sai_fib_router_interface_t *p_rif_node)
                                         &npu_port_id);
             return ((uint_t) npu_port_id);
         }
-    } else {
+    } else if (p_rif_node->type == SAI_ROUTER_INTERFACE_TYPE_VLAN){
         return (p_rif_node->attachment.vlan_id);
+    } else {
+        return 0;
     }
 }
 

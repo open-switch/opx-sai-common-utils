@@ -476,59 +476,5 @@ typedef struct _sai_npu_route_api_t {
  * \}
  */
 
-/** SAI FIB API - Dump the Virtual router
-    \param[in] vr_id Virtual router object ID
-  */
-void sai_fib_dump_vr (sai_object_id_t vr_id);
-
-/** SAI FIB API - Dump all Virtual routers */
-void sai_fib_dump_all_vr (void);
-
-/** SAI FIB API - Dump the router interface
-    \param[in] rif_id Router interface object ID
-  */
-void sai_fib_dump_rif (sai_object_id_t rif_id);
-
-/** SAI FIB API - Dump all the router interfaces in the Virtual router
-    \param[in] vr_id Virtual router ID
-  */
-void sai_fib_dump_all_rif_in_vr (sai_object_id_t vr_id);
-
-/** SAI FIB API - Dump all router interfaces create */
-void sai_fib_dump_all_rif (void);
-
-/** SAI FIB API - Dump all the routes  in the Virtual router
-    \param[in] vr_id Virtual router ID
-  */
-void sai_fib_dump_all_route_in_vr (sai_object_id_t vrf);
-
-/** SAI FIB API - Dump the next hop information
-    \param[in] nh_id Next hop ID
-  */
-void sai_fib_dump_nh (sai_object_id_t nh_id);
-
-/** SAI FIB API - Dump all the next hop information */
-void sai_fib_dump_all_nh (void);
-
-/** SAI FIB API - Dump all neighbor inforation in the Virtual router
-    \param[in] vr_id Virtual router ID
-  */
-void sai_fib_dump_all_neighbor_in_vr (sai_object_id_t vrf);
-
-/** SAI FIB API - Dump the next hop group information
-    \param[in] group_id Next hop group ID
-  */
-void sai_fib_dump_nh_group (sai_object_id_t group_id);
-
-/** SAI FIB API - Dump all the next hop group information */
-void sai_fib_dump_all_nh_group (void);
-
-/** SAI FIB API - Dump the next hop list from the Next hop group
-    \param[in] group_id Next hop group ID
-  */
-void sai_fib_dump_nh_list_from_nh_group (sai_object_id_t group_id);
-
-/** SAI FIB API - Dump all the neighbor mac tree */
-void sai_fib_dump_neighbor_mac_entry_tree (void);
 
 #endif /* __SAI_L3_API_H__ */

@@ -23,10 +23,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#include "saiswitch.h"
 #include "saitypes.h"
 #include "saiport.h"
-#include "saistatus.h"
 
 #include "sai_debug_utils.h"
 #include "sai_port_common.h"
@@ -35,7 +33,9 @@
 
 void sai_port_attr_info_dump_port(sai_object_id_t port_id)
 {
-    sai_port_attr_info_t *port_attr_info = sai_port_attr_info_get(port_id);
+    sai_port_info_t *sai_port_info = sai_port_info_get(port_id);
+    const sai_port_attr_info_t *port_attr_info = sai_port_attr_info_read_only_get(port_id,
+                                                                                  sai_port_info);
     if(port_attr_info == NULL)   {
         return;
     }
@@ -53,6 +53,7 @@ void sai_port_attr_info_dump_port(sai_object_id_t port_id)
               (port_attr_info->admin_state) ? "enabled" : "disabled");
 
     SAI_DEBUG("SAI_PORT_ATTR_MEDIA_TYPE is %d", port_attr_info->media_type);
+    SAI_DEBUG("SAI_PORT_ATTR_AUTO_NEG_MODE is %d", port_attr_info->autoneg);
 
     SAI_DEBUG("SAI_PORT_ATTR_DEFAULT_VLAN is %d", port_attr_info->default_vlan);
 

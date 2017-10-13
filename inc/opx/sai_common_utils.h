@@ -60,6 +60,8 @@ typedef enum _sai_module_t
     SAI_MODULE_SCHEDULER,             /**< SAI Scheduler module */
     SAI_MODULE_SCHEDULER_GROUP,       /**< SAI Scheduler group module */
     SAI_MODULE_QOS_PORT,              /**< SAI QOS Port module */
+    SAI_MODULE_BRIDGE,                /**< SAI Bridge module */
+    SAI_MODULE_L2MC,                  /**< SAI L2MC module */
     SAI_MODULE_MAX,                   /**< SAI Max module count */
 } sai_module_t;
 

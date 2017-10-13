@@ -244,4 +244,55 @@ sai_status_t sai_lag_member_get_member_id (sai_object_id_t  lag_id,
 sai_status_t sai_lag_member_set_member_id (sai_object_id_t lag_id,
                                            sai_object_id_t port_id,
                                            sai_object_id_t member_id);
+/**
+ * @brief Increment LAG reference count
+ *
+ * @param[in] lag_id SAI LAG identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_lag_increment_ref_count(sai_object_id_t lag_id);
+
+/**
+ * @brief Decrement LAG reference count
+ *
+ * @param[in] lag_id SAI LAG identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_lag_decrement_ref_count(sai_object_id_t lag_id);
+
+/**
+ * @brief Set the default 1Q bridge port associated with the LAG
+ *
+ * @param[in] lag_id SAI LAG identifier
+ * @param[in] bridge_port_id Bridge port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_lag_def_bridge_port_set(sai_object_id_t lag_id, sai_object_id_t bridge_port_id);
+
+
+/**
+ * @brief Get the default 1Q bridge port associated for the lag from lag cache
+ *
+ * @param[in] lag_id SAI LAG identifier
+ * @param[out] bridge_port_id Bridge port identifier
+ * @return SAI_STATUS_SUCCESS if operation is successful otherwise a different
+ *  error code is returned.
+ *
+ */
+sai_status_t sai_lag_def_bridge_port_get (sai_object_id_t lag_id, sai_object_id_t *bridge_port_id);
+
+/**
+ * @brief Check if the LAG is in use
+ *
+ * @param[in] lag_id SAI LAG identifier
+ * @return true if ref_count > 0, false otherwise
+ *
+ */
+bool sai_is_lag_in_use (sai_object_id_t lag_id);
 #endif

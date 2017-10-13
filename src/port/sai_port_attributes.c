@@ -43,7 +43,10 @@ static sai_port_attr_info_t cpu_port_attr_info;
 /* Port attributes default values */
 void sai_port_attr_info_defaults_init(sai_port_attr_info_t *port_attr_info)
 {
-    STD_ASSERT(!(port_attr_info == NULL));
+    if(port_attr_info == NULL) {
+        SAI_PORT_LOG_TRACE("port_attr_info is %p in attr defaults init",  port_attr_info);
+        return;
+    }
 
     if(port_attr_info->default_init) {
         return;
@@ -90,10 +93,15 @@ void sai_port_attr_defaults_init(void)
 }
 
 sai_status_t sai_port_attr_type_get(sai_object_id_t port_id,
+                                    const sai_port_info_t *sai_port_info,
                                     sai_attribute_value_t *value)
 {
-    STD_ASSERT(value != NULL);
     sai_port_type_t port_type = sai_port_type_get(port_id);
+    /*NULL check is not required for sai_port_info as cpu port will not have port info structure*/
+    if(value == NULL) {
+        SAI_PORT_LOG_TRACE("value is %p for port 0x%"PRIx64" in attr type get", value, port_id);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
 
     switch(port_type)
     {
@@ -108,14 +116,14 @@ sai_status_t sai_port_attr_type_get(sai_object_id_t port_id,
     return SAI_STATUS_SUCCESS;
 }
 
-sai_port_attr_info_t *sai_port_attr_info_get(sai_object_id_t port)
+sai_port_attr_info_t *sai_port_attr_info_get_for_update(sai_object_id_t port,
+                                                       sai_port_info_t *port_info_table)
 {
     if(sai_is_obj_id_cpu_port(port)) {
         return &cpu_port_attr_info;
 
     } else if(sai_is_obj_id_logical_port(port)) {
 
-        sai_port_info_t *port_info_table = sai_port_info_get(port);
         if (port_info_table == NULL) {
             return NULL;
         }
@@ -125,19 +133,37 @@ sai_port_attr_info_t *sai_port_attr_info_get(sai_object_id_t port)
     return NULL;
 }
 
-/* Cache the port attributes for VM and Dump */
-sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
-                                          const sai_attribute_t *attr)
+const sai_port_attr_info_t *sai_port_attr_info_read_only_get(sai_object_id_t port,
+                                                             const sai_port_info_t *port_info_table)
 {
-    STD_ASSERT(!(attr == NULL));
+    if(sai_is_obj_id_cpu_port(port)) {
+        return &cpu_port_attr_info;
 
-    if(!sai_is_port_valid(port_id)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not valid port", port_id);
-        return SAI_STATUS_INVALID_OBJECT_ID;
+    } else if(sai_is_obj_id_logical_port(port)) {
+
+        if (port_info_table == NULL) {
+            return NULL;
+        }
+        return &port_info_table->port_attr_info;
     }
 
-    sai_port_attr_info_t *port_attr_info = sai_port_attr_info_get(port_id);
-    STD_ASSERT(!(port_attr_info == NULL));
+    return NULL;
+}
+/* Cache the port attributes for VM and Dump */
+sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
+                                          sai_port_info_t *port_info,
+                                          const sai_attribute_t *attr)
+{
+
+    sai_port_attr_info_t *port_attr_info = sai_port_attr_info_get_for_update(port_id, port_info);
+
+    /*NULL check is not required for sai_port_info as cpu port will not have port info structure*/
+    if((port_attr_info == NULL) || (attr == NULL)) {
+        SAI_PORT_LOG_TRACE("port_attr_info is %p attr is %p for port 0x%"PRIx64" in attr cache set",
+                           port_attr_info, attr, port_id);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
 
     SAI_PORT_LOG_TRACE("Attribute %d cache update for port 0x%"PRIx64"", attr->id, port_id);
 
@@ -148,7 +174,6 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
 
         case SAI_PORT_ATTR_SPEED:
             port_attr_info->speed = attr->value.u32;
-            sai_port_speed_set(port_id,port_attr_info->speed);
             break;
 
         case SAI_PORT_ATTR_FULL_DUPLEX_MODE:
@@ -239,18 +264,106 @@ sai_status_t sai_port_attr_info_cache_set(sai_object_id_t port_id,
     return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
-                                          sai_attribute_t *attr)
+bool sai_port_is_duplicate_attribute_val (sai_object_id_t port_id,
+                                          const sai_port_info_t *port_info,
+                                          const sai_attribute_t *attr)
 {
-    STD_ASSERT(!(attr == NULL));
 
-    if(!sai_is_port_valid(port_id)) {
-        SAI_PORT_LOG_ERR("Port 0x%"PRIx64" is not valid port", port_id);
-        return SAI_STATUS_INVALID_OBJECT_ID;
+    const sai_port_attr_info_t *port_attr_info = sai_port_attr_info_read_only_get(port_id,
+                                                                                  port_info);
+
+    /*NULL check is not required for sai_port_info as cpu port will not have port info structure*/
+    if((port_attr_info == NULL) || (attr == NULL)) {
+        SAI_PORT_LOG_TRACE("port_attr_info is %p attr is %p for port 0x%"PRIx64" in attr dup check",
+                           port_attr_info, attr, port_id);
+        return SAI_STATUS_INVALID_PARAMETER;
     }
 
-    sai_port_attr_info_t *port_attr_info = sai_port_attr_info_get(port_id);
-    STD_ASSERT(!(port_attr_info == NULL));
+    switch(attr->id) {
+        case SAI_PORT_ATTR_OPER_STATUS:
+            return (attr->value.s32 == port_attr_info->oper_status);
+
+        case SAI_PORT_ATTR_SPEED:
+            return (attr->value.u32 == port_attr_info->speed);
+
+        case SAI_PORT_ATTR_FULL_DUPLEX_MODE:
+            return (attr->value.booldata == port_attr_info->duplex);
+
+        case SAI_PORT_ATTR_AUTO_NEG_MODE:
+            return (attr->value.booldata == port_attr_info->autoneg);
+
+        case SAI_PORT_ATTR_ADMIN_STATE:
+            return (attr->value.booldata == port_attr_info->admin_state);
+
+        case SAI_PORT_ATTR_MEDIA_TYPE:
+            return (attr->value.s32 == port_attr_info->media_type);
+
+        case SAI_PORT_ATTR_PORT_VLAN_ID:
+            return (attr->value.u16 == port_attr_info->default_vlan);
+
+        case SAI_PORT_ATTR_DEFAULT_VLAN_PRIORITY:
+            return (attr->value.u8 == port_attr_info->default_vlan_priority);
+
+        case SAI_PORT_ATTR_INGRESS_FILTERING:
+            return (attr->value.booldata == port_attr_info->ingress_filtering);
+
+        case SAI_PORT_ATTR_DROP_UNTAGGED:
+            return (attr->value.booldata == port_attr_info->drop_untagged);
+
+        case SAI_PORT_ATTR_DROP_TAGGED:
+            return (attr->value.booldata == port_attr_info->drop_tagged);
+
+        case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
+            return (attr->value.s32 == port_attr_info->internal_loopback);
+
+        case SAI_PORT_ATTR_FDB_LEARNING_MODE:
+            return (attr->value.s32 == port_attr_info->fdb_learning);
+
+        case SAI_PORT_ATTR_UPDATE_DSCP:
+            return (attr->value.booldata == port_attr_info->update_dscp);
+
+        case SAI_PORT_ATTR_MTU:
+            return (attr->value.u32 == port_attr_info->mtu);
+
+        case SAI_PORT_ATTR_MAX_LEARNED_ADDRESSES:
+            return (attr->value.u32 == port_attr_info->max_learned_address);
+
+        case SAI_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
+            return (attr->value.s32 == port_attr_info->fdb_learn_limit_violation);
+
+        case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
+            return (attr->value.s32 == port_attr_info->flow_control_mode);
+
+        case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL:
+            return (attr->value.u8 == port_attr_info->pfc_enabled_bitmap);
+
+        case SAI_PORT_ATTR_FEC_MODE:
+            return (attr->value.s32 == port_attr_info->fec_mode);
+
+        case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
+            return (attr->value.u32 == port_attr_info->oui_code);
+
+        default:
+            return false;
+    }
+    return false;
+}
+sai_status_t sai_port_attr_info_cache_get(sai_object_id_t port_id,
+                                          const sai_port_info_t *port_info,
+                                          sai_attribute_t *attr)
+{
+
+    const sai_port_attr_info_t *port_attr_info = sai_port_attr_info_read_only_get(port_id,
+                                                                                  port_info);
+
+
+    /*NULL check is not required for sai_port_info as cpu port will not have port info structure*/
+    if((port_attr_info == NULL) || (attr == NULL)) {
+        SAI_PORT_LOG_TRACE("port_attr_info is %p attr is %p for port 0x%"PRIx64" in attr cache get",
+                           port_attr_info, attr, port_id);
+        return SAI_STATUS_INVALID_PARAMETER;
+    }
+
 
     switch(attr->id) {
         case SAI_PORT_ATTR_OPER_STATUS:
